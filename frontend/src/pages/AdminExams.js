@@ -1,238 +1,801 @@
+// import React, { useState, useEffect } from 'react';
+// import axios from 'axios';
+// import Layout from '../components/Layout';
+// import {
+//   FaFolder, FaFolderPlus, FaPlus, FaTrash, FaUpload,
+//   FaFilePdf, FaTimes, FaCheckCircle
+// } from 'react-icons/fa';
+
+// const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// const SUBJECTS = [
+//   { value:'svt',            label:'Sciences de la Vie (SVT)', emoji:'🧬' },
+//   { value:'physique',       label:'Physique',                  emoji:'⚡' },
+//   { value:'chimie',         label:'Chimie',                    emoji:'🧪' },
+//   { value:'mathematiques',  label:'Mathématiques',             emoji:'📐' },
+// ];
+
+// const FileDropZone = ({ id, label, file, onChange, accept = '.pdf' }) => (
+//   <div className="form-group">
+//     <label className="form-label">{label}</label>
+//     <label
+//       htmlFor={id}
+//       className={`file-drop ${file ? 'has-file' : ''}`}
+//       style={{ cursor:'pointer' }}
+//     >
+//       <input id={id} type="file" accept={accept} onChange={onChange} style={{ display:'none' }} />
+//       {file ? (
+//         <>
+//           <div className="file-drop-icon"><FaCheckCircle /></div>
+//           <div className="file-drop-text" style={{ color:'var(--green)', fontWeight:600 }}>{file.name}</div>
+//           <div className="file-drop-hint">Cliquez pour changer</div>
+//         </>
+//       ) : (
+//         <>
+//           <div className="file-drop-icon"><FaUpload /></div>
+//           <div className="file-drop-text">Cliquez pour sélectionner</div>
+//           <div className="file-drop-hint">PDF uniquement · max 20 Mo</div>
+//         </>
+//       )}
+//     </label>
+//   </div>
+// );
+
+// export default function AdminExams() {
+//   const [list, setList]               = useState([]);
+//   const [showNew, setShowNew]         = useState(false);
+//   const [addToId, setAddToId]         = useState(null);
+//   const [toast, setToast]             = useState(null);
+//   const [loading, setLoading]         = useState(false);
+//   const [fetching, setFetching]       = useState(true);
+
+//   // New concours form
+//   const [newForm, setNewForm] = useState({ title:'', year:'', description:'' });
+//   const [gridFile, setGridFile] = useState(null);
+
+//   // New epreuve form
+//   const [epForm, setEpForm]   = useState({ subject:'svt', title:'', order:0 });
+//   const [examFile, setExamFile] = useState(null);
+
+//   useEffect(() => { fetchAll(); }, []);
+
+//   const showToast = (msg, type='success') => {
+//     setToast({ msg, type });
+//     setTimeout(() => setToast(null), 3500);
+//   };
+
+//   const fetchAll = async () => {
+//     try {
+//       const res = await axios.get(`${API}/api/concours`);
+//       setList(res.data);
+//     } catch { showToast('Erreur de chargement', 'error'); }
+//     finally { setFetching(false); }
+//   };
+
+//   const createConcours = async (e) => {
+//     e.preventDefault();
+//     if (!gridFile) { showToast('La grille de correction est obligatoire', 'error'); return; }
+//     setLoading(true);
+//     const fd = new FormData();
+//     Object.entries(newForm).forEach(([k,v]) => fd.append(k, v));
+//     fd.append('answerGridFile', gridFile);
+//     try {
+//       await axios.post(`${API}/api/concours`, fd, { headers:{ 'Content-Type':'multipart/form-data' } });
+//       showToast('Concours créé avec succès !');
+//       setShowNew(false);
+//       setNewForm({ title:'', year:'', description:'' });
+//       setGridFile(null);
+//       fetchAll();
+//     } catch { showToast('Erreur lors de la création', 'error'); }
+//     finally { setLoading(false); }
+//   };
+
+//   const addEpreuve = async () => {
+//     if (!examFile) { showToast('Le fichier de l\'épreuve est obligatoire', 'error'); return; }
+//     setLoading(true);
+//     const fd = new FormData();
+//     fd.append('concoursId', addToId);
+//     Object.entries(epForm).forEach(([k,v]) => fd.append(k, v));
+//     fd.append('examFile', examFile);
+//     try {
+//       await axios.post(`${API}/api/concours/epreuve`, fd, { headers:{ 'Content-Type':'multipart/form-data' } });
+//       showToast('Matière ajoutée avec succès !');
+//       setAddToId(null);
+//       setEpForm({ subject:'svt', title:'', order:0 });
+//       setExamFile(null);
+//       fetchAll();
+//     } catch { showToast('Erreur lors de l\'ajout', 'error'); }
+//     finally { setLoading(false); }
+//   };
+
+//   const deleteConcours = async (id) => {
+//     if (!window.confirm('Supprimer ce concours et toutes ses épreuves ?')) return;
+//     try {
+//       await axios.delete(`${API}/api/concours/${id}`);
+//       showToast('Concours supprimé');
+//       fetchAll();
+//     } catch { showToast('Impossible de supprimer', 'error'); }
+//   };
+
+//   const deleteEpreuve = async (id) => {
+//     if (!window.confirm('Supprimer cette épreuve ?')) return;
+//     try {
+//       await axios.delete(`${API}/api/concours/epreuve/${id}`);
+//       showToast('Épreuve supprimée');
+//       fetchAll();
+//     } catch { showToast('Impossible de supprimer', 'error'); }
+//   };
+
+//   return (
+//     <Layout>
+//       <div className="page-header">
+//         <h1>
+//           <span className="icon"><FaFolder /></span>
+//           Gestion des concours
+//         </h1>
+//         <p>Organisez les concours par année et ajoutez les 4 matières avec leur grille de correction.</p>
+//       </div>
+
+//       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:24 }}>
+//         <button className="btn btn-primary" onClick={() => setShowNew(true)}>
+//           <FaFolderPlus /> Nouveau concours
+//         </button>
+//       </div>
+
+//       {fetching ? (
+//         <div className="page-loading"><span className="spinner spinner-lg" /></div>
+//       ) : list.length === 0 ? (
+//         <div className="card">
+//           <div className="empty-state">
+//             <div className="empty-state-icon"><FaFolder /></div>
+//             <h3>Aucun concours pour le moment</h3>
+//             <p>Cliquez sur "Nouveau concours" pour commencer.</p>
+//           </div>
+//         </div>
+//       ) : (
+//         <div>
+//           {list.map(concours => (
+//             <div key={concours._id} className="admin-concours-panel">
+//               {/* Header */}
+//               <div className="admin-concours-header">
+//                 <div>
+//                   <div className="admin-concours-title">{concours.title}</div>
+//                   <div className="admin-concours-year">{concours.year}</div>
+//                 </div>
+//                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+//                   {concours.answerGridFile?.path && (
+//                     <a
+//                       href={`${API}/${concours.answerGridFile.path}`}
+//                       target="_blank"
+//                       rel="noreferrer"
+//                       className="btn btn-ghost btn-sm"
+//                     >
+//                       <FaFilePdf style={{ color:'var(--green)' }} /> Grille
+//                     </a>
+//                   )}
+//                   <button className="btn btn-ghost btn-sm" onClick={() => setAddToId(concours._id)}>
+//                     <FaPlus /> Matière
+//                   </button>
+//                   <button className="btn btn-danger btn-sm" onClick={() => deleteConcours(concours._id)}>
+//                     <FaTrash />
+//                   </button>
+//                 </div>
+//               </div>
+
+//               {/* Epreuves */}
+//               <div style={{ padding:'12px 16px' }}>
+//                 {(!concours.epreuves || concours.epreuves.length === 0) ? (
+//                   <p style={{ fontSize:13, color:'var(--text3)', textAlign:'center', padding:'12px 0' }}>
+//                     Aucune matière — cliquez sur "+ Matière" pour en ajouter.
+//                   </p>
+//                 ) : (
+//                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:10 }}>
+//                     {concours.epreuves.map(ep => {
+//                       const s = SUBJECTS.find(s => s.value === ep.subject);
+//                       return (
+//                         <div
+//                           key={ep._id}
+//                           style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 12px', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)' }}
+//                         >
+//                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+//                             <span style={{ fontSize:18 }}>{s?.emoji || '📄'}</span>
+//                             <div>
+//                               <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', textTransform:'capitalize' }}>{ep.subject}</div>
+//                               {ep.examFile?.path && (
+//                                 <a href={`${API}/${ep.examFile.path}`} target="_blank" rel="noreferrer" style={{ fontSize:11, color:'var(--accent)' }}>
+//                                   Voir PDF
+//                                 </a>
+//                               )}
+//                             </div>
+//                           </div>
+//                           <button
+//                             className="btn btn-danger btn-sm"
+//                             style={{ padding:'4px 8px', minWidth:'unset' }}
+//                             onClick={() => deleteEpreuve(ep._id)}
+//                           >
+//                             <FaTrash style={{ fontSize:11 }} />
+//                           </button>
+//                         </div>
+//                       );
+//                     })}
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+//       )}
+
+//       {/* Modal: Nouveau concours */}
+//       {showNew && (
+//         <div className="modal-overlay" onClick={() => setShowNew(false)}>
+//           <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+//             <div className="modal-header">
+//               <h3>📁 Nouveau concours</h3>
+//               <button className="btn-icon" onClick={() => setShowNew(false)}><FaTimes /></button>
+//             </div>
+//             <form onSubmit={createConcours}>
+//               <div className="modal-body">
+//                 <div className="form-group">
+//                   <label className="form-label">Titre *</label>
+//                   <input className="form-input" placeholder="Ex: Concours Médecine 2022-2023" value={newForm.title} onChange={e => setNewForm({ ...newForm, title:e.target.value })} required />
+//                 </div>
+//                 <div className="form-group">
+//                   <label className="form-label">Année *</label>
+//                   <input className="form-input" placeholder="2022-2023" value={newForm.year} onChange={e => setNewForm({ ...newForm, year:e.target.value })} required />
+//                 </div>
+//                 <div className="form-group">
+//                   <label className="form-label">Description</label>
+//                   <textarea className="form-textarea" placeholder="Optionnel..." value={newForm.description} onChange={e => setNewForm({ ...newForm, description:e.target.value })} />
+//                 </div>
+//                 <FileDropZone
+//                   id="grid-file"
+//                   label="Grille de correction (PDF) *"
+//                   file={gridFile}
+//                   onChange={e => setGridFile(e.target.files[0])}
+//                 />
+//               </div>
+//               <div className="modal-footer">
+//                 <button type="button" className="btn btn-ghost" onClick={() => setShowNew(false)}>Annuler</button>
+//                 <button type="submit" className="btn btn-primary" disabled={loading}>
+//                   {loading ? <><span className="spinner" style={{ width:14, height:14, borderWidth:2 }} /> Création...</> : 'Créer'}
+//                 </button>
+//               </div>
+//             </form>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Modal: Ajouter épreuve */}
+//       {addToId && (
+//         <div className="modal-overlay" onClick={() => setAddToId(null)}>
+//           <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+//             <div className="modal-header">
+//               <h3>➕ Ajouter une matière</h3>
+//               <button className="btn-icon" onClick={() => setAddToId(null)}><FaTimes /></button>
+//             </div>
+//             <div className="modal-body">
+//               <div className="form-group">
+//                 <label className="form-label">Matière</label>
+//                 <select className="form-select" value={epForm.subject} onChange={e => setEpForm({ ...epForm, subject:e.target.value })}>
+//                   {SUBJECTS.map(s => (
+//                     <option key={s.value} value={s.value}>{s.emoji} {s.label}</option>
+//                   ))}
+//                 </select>
+//               </div>
+//               <div className="form-group">
+//                 <label className="form-label">Titre (optionnel)</label>
+//                 <input className="form-input" placeholder="Titre personnalisé" value={epForm.title} onChange={e => setEpForm({ ...epForm, title:e.target.value })} />
+//               </div>
+//               <div className="form-group">
+//                 <label className="form-label">Ordre d'affichage</label>
+//                 <input type="number" min="0" className="form-input" value={epForm.order} onChange={e => setEpForm({ ...epForm, order: parseInt(e.target.value)||0 })} />
+//               </div>
+//               <FileDropZone
+//                 id="exam-file"
+//                 label="Fichier épreuve (PDF) *"
+//                 file={examFile}
+//                 onChange={e => setExamFile(e.target.files[0])}
+//               />
+//             </div>
+//             <div className="modal-footer">
+//               <button className="btn btn-ghost" onClick={() => setAddToId(null)}>Annuler</button>
+//               <button className="btn btn-primary" onClick={addEpreuve} disabled={loading}>
+//                 {loading ? <><span className="spinner" style={{ width:14, height:14, borderWidth:2 }} /> Ajout...</> : 'Ajouter'}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Toast */}
+//       {toast && (
+//         <div className={`toast toast-${toast.type}`}>
+//           {toast.type === 'success' ? '✅' : '⚠️'} {toast.msg}
+//         </div>
+//       )}
+//     </Layout>
+//   );
+// }
+
+// pages/AdminExams.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';
-import { FaPlus, FaUpload, FaTrash, FaEdit } from 'react-icons/fa';
+import {
+  FaFolder, FaFolderPlus, FaPlus, FaTrash, FaUpload,
+  FaFilePdf, FaTimes, FaCheckCircle, FaQuestionCircle
+} from 'react-icons/fa';
+
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const SUBJECTS = [
-  { value: 'math', label: 'Mathématiques' },
-  { value: 'physique', label: 'Physique' },
-  { value: 'chimie', label: 'Chimie' },
-  { value: 'svt', label: 'SVT' }
+  { value: 'svt', label: 'Sciences de la Vie (SVT)', emoji: '🧬' },
+  { value: 'physique', label: 'Physique', emoji: '⚡' },
+  { value: 'chimie', label: 'Chimie', emoji: '🧪' },
+  { value: 'mathematiques', label: 'Mathématiques', emoji: '📐' },
 ];
 
-const AdminExams = () => {
-  const [form, setForm] = useState({ concours: '', title: '', subject: 'math', year: '', description: '' });
-  const [examFile, setExamFile] = useState(null);
-  const [gridFile, setGridFile] = useState(null);
-  const [msg, setMsg] = useState('');
+const FileDropZone = ({ id, label, file, onChange, accept = '.pdf' }) => (
+  <div className="form-group">
+    <label className="form-label">{label}</label>
+    <label
+      htmlFor={id}
+      className={`file-drop ${file ? 'has-file' : ''}`}
+      style={{ cursor: 'pointer' }}
+    >
+      <input id={id} type="file" accept={accept} onChange={onChange} style={{ display: 'none' }} />
+      {file ? (
+        <>
+          <div className="file-drop-icon"><FaCheckCircle /></div>
+          <div className="file-drop-text" style={{ color: 'var(--green)', fontWeight: 600 }}>{file.name}</div>
+          <div className="file-drop-hint">Cliquez pour changer</div>
+        </>
+      ) : (
+        <>
+          <div className="file-drop-icon"><FaUpload /></div>
+          <div className="file-drop-text">Cliquez pour sélectionner</div>
+          <div className="file-drop-hint">PDF uniquement · max 20 Mo</div>
+        </>
+      )}
+    </label>
+  </div>
+);
+
+export default function AdminExams() {
+  const [list, setList] = useState([]);
+  const [showNew, setShowNew] = useState(false);
+  const [addToId, setAddToId] = useState(null);
+  const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [exams, setExams] = useState([]);
-  const [refresh, setRefresh] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  useEffect(() => {
-    fetchExams();
-  }, [refresh]);
+  // New concours form
+  const [newForm, setNewForm] = useState({ title: '', year: '', description: '' });
+  const [gridFile, setGridFile] = useState(null);
 
-  const fetchExams = async () => {
+  // New epreuve form
+  const [epForm, setEpForm] = useState({
+    subject: 'svt',
+    title: '',
+    order: 0,
+    nbQuestionsParBloc: 20, // ⭐ NOUVEAU : par défaut 20
+  });
+  const [examFile, setExamFile] = useState(null);
+
+  useEffect(() => { fetchAll(); }, []);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const fetchAll = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/exams`);
-      setExams(res.data);
+      const res = await axios.get(`${API}/api/concours`);
+      setList(res.data.data || res.data);
     } catch (err) {
-      console.error(err);
+      console.error('Erreur:', err);
+      showToast('Erreur de chargement', 'error');
+    } finally {
+      setFetching(false);
     }
   };
 
-  const submit = async (e) => {
+  const createConcours = async (e) => {
     e.preventDefault();
-    if (!examFile || !gridFile) {
-      setMsg('❌ Veuillez sélectionner le fichier d\'épreuve et la grille de réponse.');
+    if (!gridFile) {
+      showToast('La grille de correction est obligatoire', 'error');
       return;
     }
 
     setLoading(true);
-    const data = new FormData();
-    data.append('concours', form.concours);
-    data.append('title', form.title);
-    data.append('subject', form.subject);
-    data.append('year', form.year);
-    data.append('description', form.description);
-    data.append('examFile', examFile);
-    data.append('answerGridFile', gridFile);
+    const fd = new FormData();
+    Object.entries(newForm).forEach(([k, v]) => fd.append(k, v));
+    fd.append('answerGridFile', gridFile);
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/exams`, data, {
+      await axios.post(`${API}/api/concours`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setMsg('✅ Épreuve ajoutée avec succès');
-      setForm({ concours: '', title: '', subject: 'math', year: '', description: '' });
-      setExamFile(null);
+      showToast('Concours créé avec succès !');
+      setShowNew(false);
+      setNewForm({ title: '', year: '', description: '' });
       setGridFile(null);
-      setRefresh(!refresh);
-      setTimeout(() => setMsg(''), 3000);
+      fetchAll();
     } catch (err) {
-      setMsg('❌ Erreur lors de l\'ajout');
+      console.error('Erreur création:', err);
+      showToast('Erreur lors de la création', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteExam = async (id) => {
-    if (!window.confirm('Confirmer la suppression de cette épreuve ?')) return;
-    try {
-      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/exams/${id}`);
-      setMsg('✅ Épreuve supprimée');
-      setRefresh(!refresh);
-      setTimeout(() => setMsg(''), 3000);
-    } catch (err) {
-      setMsg('❌ Impossible de supprimer');
+  const addEpreuve = async () => {
+    if (!examFile) {
+      showToast('Le fichier de l\'épreuve est obligatoire', 'error');
+      return;
     }
+
+    setLoading(true);
+    const fd = new FormData();
+    fd.append('concoursId', addToId);
+    Object.entries(epForm).forEach(([k, v]) => fd.append(k, v));
+    fd.append('examFile', examFile);
+
+    try {
+      await axios.post(`${API}/api/concours/epreuve`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      showToast('Matière ajoutée avec succès !');
+      setAddToId(null);
+      setEpForm({
+        subject: 'svt',
+        title: '',
+        order: 0,
+        nbQuestionsParBloc: 20,
+      });
+      setExamFile(null);
+      fetchAll();
+    } catch (err) {
+      console.error('Erreur ajout:', err);
+      showToast('Erreur lors de l\'ajout', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteConcours = async (id) => {
+    if (!window.confirm('Supprimer ce concours et toutes ses épreuves ?')) return;
+    try {
+      await axios.delete(`${API}/api/concours/${id}`);
+      showToast('Concours supprimé');
+      fetchAll();
+    } catch (err) {
+      console.error('Erreur suppression:', err);
+      showToast('Impossible de supprimer', 'error');
+    }
+  };
+
+  const deleteEpreuve = async (id) => {
+    if (!window.confirm('Supprimer cette épreuve ?')) return;
+    try {
+      await axios.delete(`${API}/api/concours/epreuve/${id}`);
+      showToast('Épreuve supprimée');
+      fetchAll();
+    } catch (err) {
+      console.error('Erreur suppression:', err);
+      showToast('Impossible de supprimer', 'error');
+    }
+  };
+
+  // Télécharger un fichier PDF depuis base64
+  const downloadFile = async (epreuveId, fileType) => {
+    try {
+      const endpoint = fileType === 'exam'
+        ? `${API}/api/concours/${epreuveId}/exam-file`
+        : `${API}/api/concours/${epreuveId}/answer-grid`;
+
+      const res = await axios.get(endpoint, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileType === 'exam' ? 'epreuve.pdf' : 'grille.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentElement.removeChild(link);
+    } catch (err) {
+      console.error('Erreur téléchargement:', err);
+      showToast('Erreur lors du téléchargement', 'error');
+    }
+  };
+
+  // Calcul de la plage de questions pour une épreuve
+  const getQuestionRange = (order, nbQ) => {
+    const start = order * nbQ + 1;
+    const end = (order + 1) * nbQ;
+    return `Q${start}–Q${end}`;
   };
 
   return (
     <Layout>
-      <div className="space-y-10">
-        <div>
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold text-gray-800 flex items-center gap-3">
-              <FaPlus className="text-blue-600" />
-              Gestion des épreuves
-            </h1>
-            <p className="text-gray-600 mt-2">Ajoutez, affichez et supprimez les épreuves par concours, année et matière.</p>
+      <div className="page-header">
+        <h1>
+          <span className="icon"><FaFolder /></span>
+          Gestion des concours
+        </h1>
+        <p>Organisez les concours par année et ajoutez les 4 matières avec leur grille de correction.</p>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+        <button className="btn btn-primary" onClick={() => setShowNew(true)}>
+          <FaFolderPlus /> Nouveau concours
+        </button>
+      </div>
+
+      {fetching ? (
+        <div className="page-loading"><span className="spinner spinner-lg" /></div>
+      ) : list.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <div className="empty-state-icon"><FaFolder /></div>
+            <h3>Aucun concours pour le moment</h3>
+            <p>Cliquez sur "Nouveau concours" pour commencer.</p>
           </div>
+        </div>
+      ) : (
+        <div>
+          {list.map(concours => (
+            <div key={concours._id} className="admin-concours-panel">
+              {/* Header */}
+              <div className="admin-concours-header">
+                <div>
+                  <div className="admin-concours-title">{concours.title}</div>
+                  <div className="admin-concours-year">{concours.year}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {concours.answerGridFile?.originalName && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => downloadFile(concours._id, 'grid')}
+                      title="Télécharger la grille"
+                    >
+                      <FaFilePdf style={{ color: 'var(--green)' }} /> Grille
+                    </button>
+                  )}
+                  <button className="btn btn-ghost btn-sm" onClick={() => setAddToId(concours._id)}>
+                    <FaPlus /> Matière
+                  </button>
+                  <button className="btn btn-danger btn-sm" onClick={() => deleteConcours(concours._id)}>
+                    <FaTrash />
+                  </button>
+                </div>
+              </div>
 
-          {msg && (
-            <div className={`mb-6 p-4 rounded-lg font-semibold ${msg.includes('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-              {msg}
+              {/* Epreuves */}
+              <div style={{ padding: '12px 16px' }}>
+                {(!concours.epreuves || concours.epreuves.length === 0) ? (
+                  <p style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', padding: '12px 0' }}>
+                    Aucune matière — cliquez sur "+ Matière" pour en ajouter.
+                  </p>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+                    {concours.epreuves.map(ep => {
+                      const s = SUBJECTS.find(s => s.value === ep.subject);
+                      const nbQ = ep.nbQuestionsParBloc || 20;
+                      const range = getQuestionRange(ep.order, nbQ);
+                      return (
+                        <div
+                          key={ep._id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px 12px',
+                            background: 'var(--bg2)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 18 }}>{s?.emoji || '📄'}</span>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textTransform: 'capitalize' }}>
+                                {ep.subject}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                {/* ⭐ AFFICHAGE DU NOMBRE DE QUESTIONS */}
+                                <span style={{ fontWeight: 700, color: '#fbbf24' }}>
+                                  {nbQ} Q/bloc
+                                </span>
+                                {' · '}
+                                {range}
+                                {ep.examFile?.originalName && (
+                                  <>
+                                    {' · '}
+                                    <button
+                                      onClick={() => downloadFile(ep._id, 'exam')}
+                                      style={{
+                                        fontSize: 11,
+                                        color: 'var(--accent)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        textDecoration: 'underline'
+                                      }}
+                                    >
+                                      PDF
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            style={{ padding: '4px 8px', minWidth: 'unset' }}
+                            onClick={() => deleteEpreuve(ep._id)}
+                          >
+                            <FaTrash style={{ fontSize: 11 }} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          ))}
+        </div>
+      )}
 
-          <div className="section-panel">
-            <h2 className="text-2xl font-semibold mb-4">Ajouter une nouvelle matière</h2>
-            <form onSubmit={submit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-6 md:grid-cols-1">
-                <div>
-                  <label className="label">Concours</label>
+      {/* Modal: Nouveau concours */}
+      {showNew && (
+        <div className="modal-overlay" onClick={() => setShowNew(false)}>
+          <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>📁 Nouveau concours</h3>
+              <button className="btn-icon" onClick={() => setShowNew(false)}><FaTimes /></button>
+            </div>
+            <form onSubmit={createConcours}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Titre *</label>
                   <input
-                    type="text"
-                    value={form.concours}
-                    onChange={(e) => setForm({ ...form, concours: e.target.value })}
-                    placeholder="Ex: Concours médecine - Session 2026"
-                    className="input-field"
+                    className="form-input"
+                    placeholder="Ex: Concours Médecine 2022-2023"
+                    value={newForm.title}
+                    onChange={e => setNewForm({ ...newForm, title: e.target.value })}
                     required
                   />
                 </div>
-                <div>
-                  <label className="label">Année</label>
+                <div className="form-group">
+                  <label className="form-label">Année *</label>
                   <input
-                    type="text"
-                    value={form.year}
-                    onChange={(e) => setForm({ ...form, year: e.target.value })}
-                    placeholder="2026"
-                    className="input-field"
+                    className="form-input"
+                    placeholder="2022-2023"
+                    value={newForm.year}
+                    onChange={e => setNewForm({ ...newForm, year: e.target.value })}
                     required
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6 md:grid-cols-1">
-                <div>
-                  <label className="label">Matière</label>
-                  <select
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="input-field"
-                    required
-                  >
-                    {SUBJECTS.map((subject) => (
-                      <option key={subject.value} value={subject.value}>{subject.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Titre de l'épreuve</label>
-                  <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    placeholder="Ex: Mathématiques concours"
-                    className="input-field"
-                    required
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-textarea"
+                    placeholder="Optionnel..."
+                    value={newForm.description}
+                    onChange={e => setNewForm({ ...newForm, description: e.target.value })}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="label">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Notes sur l'épreuve ou l'université"
-                  rows="3"
-                  className="input-field"
+                <FileDropZone
+                  id="grid-file"
+                  label="Grille de correction (PDF) *"
+                  file={gridFile}
+                  onChange={e => setGridFile(e.target.files[0])}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-6 md:grid-cols-1">
-                <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-blue-50">
-                  <label className="label flex items-center gap-2">
-                    <FaUpload className="text-blue-600" />
-                    Fichier de l'épreuve (PDF)
-                  </label>
-                  <input type="file" accept=".pdf" onChange={(e) => setExamFile(e.target.files[0])} className="w-full" required />
-                  {examFile && <p className="text-sm text-green-600 font-semibold mt-2">✅ {examFile.name}</p>}
-                </div>
-                <div className="border-2 border-dashed border-green-300 rounded-lg p-6 bg-green-50">
-                  <label className="label flex items-center gap-2">
-                    <FaUpload className="text-green-600" />
-                    Grille de réponse commune (PDF)
-                  </label>
-                  <input type="file" accept=".pdf" onChange={(e) => setGridFile(e.target.files[0])} className="w-full" required />
-                  {gridFile && <p className="text-sm text-green-600 font-semibold mt-2">✅ {gridFile.name}</p>}
-                </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setShowNew(false)}>Annuler</button>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Création...</> : 'Créer'}
+                </button>
               </div>
-
-              <button type="submit" disabled={loading} className="button-gradient w-full justify-center">
-                <FaPlus />
-                {loading ? 'Chargement...' : 'Ajouter la matière'}
-              </button>
             </form>
           </div>
         </div>
+      )}
 
-        <div className="section-panel">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">Épreuves enregistrées</h2>
-              <p className="text-gray-600 mt-2">Supprimez les matières incorrectes ou obsolètes.</p>
+      {/* Modal: Ajouter épreuve */}
+      {addToId && (
+        <div className="modal-overlay" onClick={() => setAddToId(null)}>
+          <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>➕ Ajouter une matière</h3>
+              <button className="btn-icon" onClick={() => setAddToId(null)}><FaTimes /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Matière</label>
+                <select
+                  className="form-select"
+                  value={epForm.subject}
+                  onChange={e => setEpForm({ ...epForm, subject: e.target.value })}
+                >
+                  {SUBJECTS.map(s => (
+                    <option key={s.value} value={s.value}>{s.emoji} {s.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Titre (optionnel)</label>
+                <input
+                  className="form-input"
+                  placeholder="Titre personnalisé"
+                  value={epForm.title}
+                  onChange={e => setEpForm({ ...epForm, title: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Ordre d'affichage</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="form-input"
+                  value={epForm.order}
+                  onChange={e => setEpForm({ ...epForm, order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+
+              {/* ⭐ NOUVEAU : Nombre de questions par bloc */}
+              <div className="form-group" style={{
+                border: '2px solid #fbbf24',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px 14px',
+                background: 'rgba(251,191,36,0.06)',
+                marginBottom: 16
+              }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <FaQuestionCircle /> Nombre de questions par bloc *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  className="form-input"
+                  style={{ borderColor: '#fbbf24' }}
+                  value={epForm.nbQuestionsParBloc}
+                  onChange={e => setEpForm({ ...epForm, nbQuestionsParBloc: parseInt(e.target.value) || 20 })}
+                  required
+                />
+                <small style={{ color: 'var(--text3)', fontSize: 11, display: 'block', marginTop: 4 }}>
+                  Définit le nombre de QCM dans ce bloc. Exemples : 14, 20, 30. Par défaut : 20.
+                </small>
+              </div>
+
+              <FileDropZone
+                id="exam-file"
+                label="Fichier épreuve (PDF) *"
+                file={examFile}
+                onChange={e => setExamFile(e.target.files[0])}
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setAddToId(null)}>Annuler</button>
+              <button className="btn btn-primary" onClick={addEpreuve} disabled={loading}>
+                {loading ? <><span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Ajout...</> : 'Ajouter'}
+              </button>
             </div>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50 border-b-2 border-gray-200">
-                <tr>
-                  <th className="px-5 py-4 text-xs font-semibold uppercase text-gray-600">Concours</th>
-                  <th className="px-5 py-4 text-xs font-semibold uppercase text-gray-600">Année</th>
-                  <th className="px-5 py-4 text-xs font-semibold uppercase text-gray-600">Matière</th>
-                  <th className="px-5 py-4 text-xs font-semibold uppercase text-gray-600">Fichier</th>
-                  <th className="px-5 py-4 text-xs font-semibold uppercase text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {exams.map((exam) => (
-                  <tr key={exam._id} className="hover:bg-gray-50 transition">
-                    <td className="px-5 py-4">{exam.concours}</td>
-                    <td className="px-5 py-4">{exam.year}</td>
-                    <td className="px-5 py-4 capitalize">{exam.subject}</td>
-                    <td className="px-5 py-4">
-                      <a href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${exam.examFile.path}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800">
-                        Télécharger
-                      </a>
-                    </td>
-                    <td className="px-5 py-4 flex gap-3">
-                      <button type="button" onClick={() => deleteExam(exam._id)} className="btn btn-danger px-4 py-2 flex items-center gap-2">
-                        <FaTrash /> Supprimer
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>
+          {toast.type === 'success' ? '✅' : '⚠️'} {toast.msg}
+        </div>
+      )}
     </Layout>
   );
-};
-
-export default AdminExams;
+}

@@ -1,211 +1,920 @@
+// import React, { useState, useEffect } from 'react';
+// import axios from 'axios';
+// import Layout from '../components/Layout';
+// import AnswerSheet from '../components/AnswerSheet';
+// import {
+//   FaBook, FaDownload, FaUpload, FaEye, FaCalendarAlt,
+//   FaFilePdf, FaCheckCircle, FaTimes
+// } from 'react-icons/fa';
+
+// const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// const SUBJECT_META = {
+//   svt:           { emoji: '🧬', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  label: 'SVT' },
+//   physique:      { emoji: '⚡', color: '#4f8ef7', bg: 'rgba(79,142,247,0.1)',  label: 'Physique' },
+//   chimie:        { emoji: '🧪', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', label: 'Chimie' },
+//   mathematiques: { emoji: '📐', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  label: 'Maths' },
+// };
+
+// export default function Exams() {
+//   const [concoursList, setConcoursList]   = useState([]);
+//   const [selectedEpreuve, setSelected]    = useState(null);
+//   const [selectedConcours, setSelConcours]= useState(null);
+//   const [submitModal, setSubmitModal]     = useState(null);
+//   const [file, setFile]                   = useState(null);
+//   const [submitting, setSubmitting]       = useState(false);
+//   const [toast, setToast]                 = useState(null);
+//   const [loading, setLoading]             = useState(true);
+
+//   useEffect(() => { fetchConcours(); }, []);
+
+//   const showToast = (msg, type = 'success') => {
+//     setToast({ msg, type });
+//     setTimeout(() => setToast(null), 4000);
+//   };
+
+//   const fetchConcours = async () => {
+//     try {
+//       const res = await axios.get(`${API}/api/concours`);
+//       // Pour chaque concours, trier les épreuves par order et ajouter un champ realOrder (0,1,2,3)
+//       const data = res.data.map(concour => {
+//         const epreuvesSorted = [...(concour.epreuves || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+//         const epreuvesWithRealOrder = epreuvesSorted.map((ep, idx) => ({ ...ep, realOrder: idx }));
+//         return { ...concour, epreuves: epreuvesWithRealOrder };
+//       });
+//       setConcoursList(data);
+//     } catch { 
+//       showToast('Erreur lors du chargement', 'error'); 
+//     } finally { 
+//       setLoading(false); 
+//     }
+//   };
+
+//   // Calcul de la plage à partir de l'ordre réel (0 → Q1-20, 1 → Q21-40, ...)
+//   const getRange = (realOrder) => {
+//     const start = realOrder * 20 + 1;
+//     const end = (realOrder + 1) * 20;
+//     return `Q${start}–Q${end}`;
+//   };
+
+//   const handleSubmitFull = async (e) => {
+//     e.preventDefault();
+//     if (!file) { 
+//       showToast('Veuillez sélectionner un fichier PDF', 'error'); 
+//       return; 
+//     }
+//     setSubmitting(true);
+//     const fd = new FormData();
+//     fd.append('studentFile', file);
+//     fd.append('concoursId', submitModal._id);
+//     try {
+//       await axios.post(`${API}/api/submissions`, fd);
+//       showToast('Copie soumise avec succès !');
+//       setSubmitModal(null); 
+//       setFile(null);
+//     } catch { 
+//       showToast('Erreur lors de la soumission', 'error'); 
+//     } finally { 
+//       setSubmitting(false); 
+//     }
+//   };
+
+//   const openSheet = (epreuve, concours) => {
+//     setSelected(epreuve);
+//     setSelConcours(concours);
+//   };
+
+//   // Group by year
+//   const byYear = concoursList.reduce((acc, c) => {
+//     if (!acc[c.year]) acc[c.year] = [];
+//     acc[c.year].push(c);
+//     return acc;
+//   }, {});
+
+//   if (loading) return (
+//     <Layout>
+//       <div className="page-loading">
+//         <span className="spinner spinner-lg" />
+//         <span>Chargement des concours...</span>
+//       </div>
+//     </Layout>
+//   );
+
+//   return (
+//     <Layout>
+//       <div className="page-header">
+//         <h1>
+//           <span className="icon"><FaBook /></span>
+//           Bibliothèque des concours
+//         </h1>
+//         <p>Accédez aux annales, entraînez-vous par matière et recevez des feedbacks personnalisés par IA.</p>
+//       </div>
+
+//       {Object.keys(byYear).length === 0 ? (
+//         <div className="card">
+//           <div className="empty-state">
+//             <div className="empty-state-icon">📚</div>
+//             <h3>Aucun concours disponible</h3>
+//             <p>Les concours seront ajoutés prochainement.</p>
+//           </div>
+//         </div>
+//       ) : (
+//         Object.entries(byYear)
+//           .sort((a, b) => b[0].localeCompare(a[0]))
+//           .map(([year, concours]) => (
+//             <div key={year} style={{ marginBottom: 40 }}>
+//               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
+//                 <FaCalendarAlt style={{ color:'var(--accent)', fontSize:16 }} />
+//                 <h2 style={{ fontSize:18, fontWeight:700, color:'var(--text)' }}>Année {year}</h2>
+//                 <span className="badge badge-info">{concours.length} concours</span>
+//               </div>
+
+//               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:20 }}>
+//                 {concours.map(concour => {
+//                   // Les épreuves sont déjà triées et possèdent `realOrder`
+//                   const epreuves = concour.epreuves || [];
+//                   return (
+//                     <div key={concour._id} className="concours-card">
+//                       <div className="concours-card-header">
+//                         <h3>{concour.title}</h3>
+//                         <p>{epreuves.length} matière(s) · 20 QCM chacune</p>
+//                       </div>
+
+//                       <div style={{ padding:'12px 16px' }}>
+//                         {epreuves.length === 0 ? (
+//                           <p style={{ fontSize:13, color:'var(--text3)', textAlign:'center', padding:'12px 0' }}>
+//                             Aucune matière ajoutée
+//                           </p>
+//                         ) : epreuves.map(ep => {
+//                           const m = SUBJECT_META[ep.subject] || { emoji:'📄', color:'#4f8ef7', bg:'rgba(79,142,247,0.1)', label: ep.subject };
+//                           return (
+//                             <div key={ep._id} className="subject-row">
+//                               <div className="subject-info">
+//                                 <span className="subject-emoji">{m.emoji}</span>
+//                                 <div>
+//                                   <div className="subject-name">{m.label}</div>
+//                                   <div className="subject-questions">{getRange(ep.realOrder)}</div>
+//                                 </div>
+//                               </div>
+//                               <div style={{ display:'flex', gap:6 }}>
+//                                 {ep.examFile?.path && (
+//                                   <a
+//                                     href={`${API}/${ep.examFile.path}`}
+//                                     target="_blank"
+//                                     rel="noreferrer"
+//                                     className="btn btn-ghost btn-sm"
+//                                     title="Télécharger le PDF"
+//                                     style={{ padding:'5px 10px' }}
+//                                   >
+//                                     <FaDownload style={{ fontSize:11 }} />
+//                                   </a>
+//                                 )}
+//                                 <button
+//                                   className="btn btn-sm"
+//                                   style={{ background: m.bg, color: m.color, border:`1px solid ${m.color}33` }}
+//                                   onClick={() => openSheet(ep, concour)}
+//                                 >
+//                                   ✏️ Répondre
+//                                 </button>
+//                               </div>
+//                             </div>
+//                           );
+//                         })}
+//                       </div>
+
+//                       <div className="card-footer" style={{ display:'flex', flexDirection:'column', gap:8 }}>
+//                         {concour.answerGridFile?.path && (
+//                           <a
+//                             href={`${API}/${concour.answerGridFile.path}`}
+//                             target="_blank"
+//                             rel="noreferrer"
+//                             style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, fontSize:13, color:'var(--green)', textDecoration:'none', padding:'6px 0' }}
+//                           >
+//                             <FaEye /> Voir la grille de correction
+//                           </a>
+//                         )}
+//                         <button
+//                           className="btn btn-ghost btn-full"
+//                           onClick={() => setSubmitModal(concour)}
+//                           style={{ fontSize:13 }}
+//                         >
+//                           <FaUpload /> Soumettre ma copie complète
+//                         </button>
+//                       </div>
+//                     </div>
+//                   );
+//                 })}
+//               </div>
+//             </div>
+//           ))
+//       )}
+
+//       {/* Modals */}
+//       {selectedEpreuve && selectedConcours && (
+//         <AnswerSheet
+//           epreuve={selectedEpreuve}
+//           concours={selectedConcours}
+//           onClose={() => { setSelected(null); setSelConcours(null); }}
+//           onSuccess={() => showToast('Opération réussie !')}
+//         />
+//       )}
+
+//       {submitModal && (
+//         <div className="modal-overlay" onClick={() => setSubmitModal(null)}>
+//           <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+//             <div className="modal-header">
+//               <h3>Soumettre ma copie complète</h3>
+//               <button className="btn-icon" onClick={() => setSubmitModal(null)}><FaTimes /></button>
+//             </div>
+//             <form onSubmit={handleSubmitFull}>
+//               <div className="modal-body">
+//                 <div className="alert alert-success" style={{ marginBottom:16 }}>
+//                   <FaFilePdf />
+//                   <span>Soumettez toutes les matières en un seul fichier PDF ({submitModal.title})</span>
+//                 </div>
+
+//                 <label className={`file-drop ${file ? 'has-file' : ''}`} htmlFor="full-copy-input" style={{ cursor:'pointer' }}>
+//                   <input id="full-copy-input" type="file" accept=".pdf" onChange={e => setFile(e.target.files[0])} />
+//                   {file ? (
+//                     <>
+//                       <div className="file-drop-icon"><FaCheckCircle /></div>
+//                       <div className="file-drop-text" style={{ color:'var(--green)', fontWeight:600 }}>{file.name}</div>
+//                       <div className="file-drop-hint">Cliquez pour changer</div>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <div className="file-drop-icon"><FaUpload /></div>
+//                       <div className="file-drop-text">Cliquez pour sélectionner votre copie (PDF)</div>
+//                       <div className="file-drop-hint">Taille max : 20 Mo</div>
+//                     </>
+//                   )}
+//                 </label>
+//               </div>
+//               <div className="modal-footer">
+//                 <button type="button" className="btn btn-ghost" onClick={() => setSubmitModal(null)}>Annuler</button>
+//                 <button type="submit" className="btn btn-primary" disabled={submitting || !file}>
+//                   {submitting ? 'Envoi en cours...' : 'Soumettre'}
+//                 </button>
+//               </div>
+//             </form>
+//           </div>
+//         </div>
+//       )}
+
+//       {toast && (
+//         <div className={`toast toast-${toast.type}`}>
+//           {toast.type === 'success' ? '✅' : '⚠️'} {toast.msg}
+//         </div>
+//       )}
+//     </Layout>
+//   );
+// }
+// pages/Exams.jsx
+// import React, { useState, useEffect } from 'react';
+// import axios from 'axios';
+// import Layout from '../components/Layout';
+// import AnswerSheet from '../components/AnswerSheet';
+// import {
+//   FaBook, FaDownload, FaUpload, FaEye, FaCalendarAlt,
+//   FaFilePdf, FaCheckCircle, FaTimes
+// } from 'react-icons/fa';
+
+// const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// const SUBJECT_META = {
+//   svt:           { emoji: '🧬', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  label: 'SVT' },
+//   physique:      { emoji: '⚡', color: '#4f8ef7', bg: 'rgba(79,142,247,0.1)',  label: 'Physique' },
+//   chimie:        { emoji: '🧪', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', label: 'Chimie' },
+//   mathematiques: { emoji: '📐', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  label: 'Maths' },
+// };
+
+// export default function Exams() {
+//   const [concoursList, setConcoursList]   = useState([]);
+//   const [selectedEpreuve, setSelected]    = useState(null);
+//   const [selectedConcours, setSelConcours]= useState(null);
+//   const [submitModal, setSubmitModal]     = useState(null);
+//   const [file, setFile]                   = useState(null);
+//   const [submitting, setSubmitting]       = useState(false);
+//   const [toast, setToast]                 = useState(null);
+//   const [loading, setLoading]             = useState(true);
+
+//   useEffect(() => { fetchConcours(); }, []);
+
+//   const showToast = (msg, type = 'success') => {
+//     setToast({ msg, type });
+//     setTimeout(() => setToast(null), 4000);
+//   };
+
+//   const fetchConcours = async () => {
+//     try {
+//       const res = await axios.get(`${API}/api/concours`);
+//       // Récupérer les données correctement
+//       const concours = res.data.data || res.data;
+      
+//       // Pour chaque concours, trier les épreuves par order et ajouter un champ realOrder (0,1,2,3)
+//       const data = concours.map(concour => {
+//         const epreuvesSorted = [...(concour.epreuves || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+//         const epreuvesWithRealOrder = epreuvesSorted.map((ep, idx) => ({ ...ep, realOrder: idx }));
+//         return { ...concour, epreuves: epreuvesWithRealOrder };
+//       });
+//       setConcoursList(data);
+//     } catch (err) {
+//       console.error('Erreur chargement concours:', err);
+//       showToast('Erreur lors du chargement', 'error');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Calcul de la plage à partir de l'ordre réel (0 → Q1-20, 1 → Q21-40, ...)
+//   const getRange = (realOrder) => {
+//     const start = realOrder * 20 + 1;
+//     const end = (realOrder + 1) * 20;
+//     return `Q${start}–Q${end}`;
+//   };
+
+//   // ✅ Télécharger un fichier PDF depuis base64
+//   const downloadExamFile = async (epreuveId) => {
+//     try {
+//       console.log('Téléchargement du fichier exam:', epreuveId);
+//       const res = await axios.get(`${API}/api/concours/${epreuveId}/exam-file`, {
+//         responseType: 'blob'
+//       });
+      
+//       const url = window.URL.createObjectURL(new Blob([res.data]));
+//       const link = document.createElement('a');
+//       link.href = url;
+//       link.setAttribute('download', 'epreuve.pdf');
+//       document.body.appendChild(link);
+//       link.click();
+//       link.parentElement.removeChild(link);
+//       window.URL.revokeObjectURL(url);
+//     } catch (err) {
+//       console.error('Erreur téléchargement exam:', err);
+//       showToast('Erreur lors du téléchargement', 'error');
+//     }
+//   };
+
+//   // ✅ Télécharger la grille depuis base64
+//   const downloadAnswerGrid = async (concoursId) => {
+//     try {
+//       console.log('Téléchargement de la grille:', concoursId);
+//       const res = await axios.get(`${API}/api/concours/${concoursId}/answer-grid`, {
+//         responseType: 'blob'
+//       });
+      
+//       const url = window.URL.createObjectURL(new Blob([res.data]));
+//       const link = document.createElement('a');
+//       link.href = url;
+//       link.setAttribute('download', 'grille-reponses.pdf');
+//       document.body.appendChild(link);
+//       link.click();
+//       link.parentElement.removeChild(link);
+//       window.URL.revokeObjectURL(url);
+//     } catch (err) {
+//       console.error('Erreur téléchargement grille:', err);
+//       showToast('Erreur lors du téléchargement', 'error');
+//     }
+//   };
+
+//   const handleSubmitFull = async (e) => {
+//     e.preventDefault();
+//     if (!file) {
+//       showToast('Veuillez sélectionner un fichier PDF', 'error');
+//       return;
+//     }
+//     setSubmitting(true);
+//     const fd = new FormData();
+//     fd.append('studentFile', file);
+//     fd.append('concoursId', submitModal._id);
+//     try {
+//       await axios.post(`${API}/api/submissions`, fd);
+//       showToast('Copie soumise avec succès !');
+//       setSubmitModal(null);
+//       setFile(null);
+//     } catch (err) {
+//       console.error('Erreur soumission:', err);
+//       showToast('Erreur lors de la soumission', 'error');
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   };
+
+//   const openSheet = (epreuve, concours) => {
+//     setSelected(epreuve);
+//     setSelConcours(concours);
+//   };
+
+//   // Group by year
+//   const byYear = concoursList.reduce((acc, c) => {
+//     if (!acc[c.year]) acc[c.year] = [];
+//     acc[c.year].push(c);
+//     return acc;
+//   }, {});
+
+//   if (loading) return (
+//     <Layout>
+//       <div className="page-loading">
+//         <span className="spinner spinner-lg" />
+//         <span>Chargement des concours...</span>
+//       </div>
+//     </Layout>
+//   );
+
+//   return (
+//     <Layout>
+//       <div className="page-header">
+//         <h1>
+//           <span className="icon"><FaBook /></span>
+//           Bibliothèque des concours
+//         </h1>
+//         <p>Accédez aux annales, entraînez-vous par matière et recevez des feedbacks personnalisés par IA.</p>
+//       </div>
+
+//       {Object.keys(byYear).length === 0 ? (
+//         <div className="card">
+//           <div className="empty-state">
+//             <div className="empty-state-icon">📚</div>
+//             <h3>Aucun concours disponible</h3>
+//             <p>Les concours seront ajoutés prochainement.</p>
+//           </div>
+//         </div>
+//       ) : (
+//         Object.entries(byYear)
+//           .sort((a, b) => b[0].localeCompare(a[0]))
+//           .map(([year, concours]) => (
+//             <div key={year} style={{ marginBottom: 40 }}>
+//               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
+//                 <FaCalendarAlt style={{ color:'var(--accent)', fontSize:16 }} />
+//                 <h2 style={{ fontSize:18, fontWeight:700, color:'var(--text)' }}>Année {year}</h2>
+//                 <span className="badge badge-info">{concours.length} concours</span>
+//               </div>
+
+//               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:20 }}>
+//                 {concours.map(concour => {
+//                   const epreuves = concour.epreuves || [];
+//                   return (
+//                     <div key={concour._id} className="concours-card">
+//                       <div className="concours-card-header">
+//                         <h3>{concour.title}</h3>
+//                         <p>{epreuves.length} matière(s) · 20 QCM chacune</p>
+//                       </div>
+
+//                       <div style={{ padding:'12px 16px' }}>
+//                         {epreuves.length === 0 ? (
+//                           <p style={{ fontSize:13, color:'var(--text3)', textAlign:'center', padding:'12px 0' }}>
+//                             Aucune matière ajoutée
+//                           </p>
+//                         ) : epreuves.map(ep => {
+//                           const m = SUBJECT_META[ep.subject] || { emoji:'📄', color:'#4f8ef7', bg:'rgba(79,142,247,0.1)', label: ep.subject };
+//                           return (
+//                             <div key={ep._id} className="subject-row">
+//                               <div className="subject-info">
+//                                 <span className="subject-emoji">{m.emoji}</span>
+//                                 <div>
+//                                   <div className="subject-name">{m.label}</div>
+//                                   <div className="subject-questions">{getRange(ep.realOrder)}</div>
+//                                 </div>
+//                               </div>
+//                               <div style={{ display:'flex', gap:6 }}>
+//                                 {/* ✅ NOUVEAU: utiliser downloadExamFile au lieu de path */}
+//                                 {ep.examFile?.originalName && (
+//                                   <button
+//                                     onClick={() => downloadExamFile(ep._id)}
+//                                     className="btn btn-ghost btn-sm"
+//                                     title="Télécharger le PDF"
+//                                     style={{ padding:'5px 10px', cursor: 'pointer' }}
+//                                   >
+//                                     <FaDownload style={{ fontSize:11 }} />
+//                                   </button>
+//                                 )}
+//                                 <button
+//                                   className="btn btn-sm"
+//                                   style={{ background: m.bg, color: m.color, border:`1px solid ${m.color}33` }}
+//                                   onClick={() => openSheet(ep, concour)}
+//                                 >
+//                                   ✏️ Répondre
+//                                 </button>
+//                               </div>
+//                             </div>
+//                           );
+//                         })}
+//                       </div>
+
+//                       <div className="card-footer" style={{ display:'flex', flexDirection:'column', gap:8 }}>
+//                         {/* ✅ NOUVEAU: utiliser downloadAnswerGrid au lieu de path */}
+//                         {concour.answerGridFile?.originalName && (
+//                           <button
+//                             onClick={() => downloadAnswerGrid(concour._id)}
+//                             style={{
+//                               display:'flex',
+//                               alignItems:'center',
+//                               justifyContent:'center',
+//                               gap:8,
+//                               fontSize:13,
+//                               color:'var(--green)',
+//                               background:'none',
+//                               border:'none',
+//                               cursor:'pointer',
+//                               padding:'6px 0',
+//                               textDecoration:'none'
+//                             }}
+//                           >
+//                             <FaEye /> Voir la grille de correction
+//                           </button>
+//                         )}
+//                         <button
+//                           className="btn btn-ghost btn-full"
+//                           onClick={() => setSubmitModal(concour)}
+//                           style={{ fontSize:13 }}
+//                         >
+//                           <FaUpload /> Soumettre ma copie complète
+//                         </button>
+//                       </div>
+//                     </div>
+//                   );
+//                 })}
+//               </div>
+//             </div>
+//           ))
+//       )}
+
+//       {/* Modals */}
+//       {selectedEpreuve && selectedConcours && (
+//         <AnswerSheet
+//           epreuve={selectedEpreuve}
+//           concours={selectedConcours}
+//           onClose={() => { setSelected(null); setSelConcours(null); }}
+//           onSuccess={() => showToast('Opération réussie !')}
+//         />
+//       )}
+
+//       {submitModal && (
+//         <div className="modal-overlay" onClick={() => setSubmitModal(null)}>
+//           <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+//             <div className="modal-header">
+//               <h3>Soumettre ma copie complète</h3>
+//               <button className="btn-icon" onClick={() => setSubmitModal(null)}><FaTimes /></button>
+//             </div>
+//             <form onSubmit={handleSubmitFull}>
+//               <div className="modal-body">
+//                 <div className="alert alert-success" style={{ marginBottom:16 }}>
+//                   <FaFilePdf />
+//                   <span>Soumettez toutes les matières en un seul fichier PDF ({submitModal.title})</span>
+//                 </div>
+
+//                 <label className={`file-drop ${file ? 'has-file' : ''}`} htmlFor="full-copy-input" style={{ cursor:'pointer' }}>
+//                   <input id="full-copy-input" type="file" accept=".pdf" onChange={e => setFile(e.target.files[0])} />
+//                   {file ? (
+//                     <>
+//                       <div className="file-drop-icon"><FaCheckCircle /></div>
+//                       <div className="file-drop-text" style={{ color:'var(--green)', fontWeight:600 }}>{file.name}</div>
+//                       <div className="file-drop-hint">Cliquez pour changer</div>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <div className="file-drop-icon"><FaUpload /></div>
+//                       <div className="file-drop-text">Cliquez pour sélectionner votre copie (PDF)</div>
+//                       <div className="file-drop-hint">Taille max : 20 Mo</div>
+//                     </>
+//                   )}
+//                 </label>
+//               </div>
+//               <div className="modal-footer">
+//                 <button type="button" className="btn btn-ghost" onClick={() => setSubmitModal(null)}>Annuler</button>
+//                 <button type="submit" className="btn btn-primary" disabled={submitting || !file}>
+//                   {submitting ? 'Envoi en cours...' : 'Soumettre'}
+//                 </button>
+//               </div>
+//             </form>
+//           </div>
+//         </div>
+//       )}
+
+//       {toast && (
+//         <div className={`toast toast-${toast.type}`}>
+//           {toast.type === 'success' ? '✅' : '⚠️'} {toast.msg}
+//         </div>
+//       )}
+//     </Layout>
+//   );
+// }
+
+// pages/Exams.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';
-import { FaDownload, FaFileAlt, FaCalendarAlt, FaSchool, FaTimes } from 'react-icons/fa';
+import AnswerSheet from '../components/AnswerSheet';
+import {
+  FaBook, FaDownload, FaUpload, FaEye, FaCalendarAlt,
+  FaFilePdf, FaCheckCircle, FaTimes
+} from 'react-icons/fa';
 
-const Exams = () => {
-  const [exams, setExams] = useState([]);
-  const [selected, setSelected] = useState(null);
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+const SUBJECT_META = {
+  svt: { emoji: '🧬', color: '#34d399', bg: 'rgba(52,211,153,0.1)', label: 'SVT' },
+  physique: { emoji: '⚡', color: '#4f8ef7', bg: 'rgba(79,142,247,0.1)', label: 'Physique' },
+  chimie: { emoji: '🧪', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', label: 'Chimie' },
+  mathematiques: { emoji: '📐', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', label: 'Maths' },
+};
+
+export default function Exams() {
+  const [concoursList, setConcoursList] = useState([]);
+  const [selectedEpreuve, setSelected] = useState(null);
+  const [selectedConcours, setSelConcours] = useState(null);
+  const [submitModal, setSubmitModal] = useState(null);
   const [file, setFile] = useState(null);
-  const [msg, setMsg] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchExams();
-  }, []);
+  useEffect(() => { fetchConcours(); }, []);
 
-  const fetchExams = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/exams`);
-      setExams(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
-  // Organiser les épreuves par année, puis par université
-  const examsByYearAndUniversity = exams.reduce((acc, exam) => {
-    const year = exam.year || 'Autres';
-    const university = exam.subject || 'Médecine';
-
-    if (!acc[year]) acc[year] = {};
-    if (!acc[year][university]) acc[year][university] = [];
-    acc[year][university].push(exam);
-    return acc;
-  }, {});
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!selected || !file) return;
-
-    setLoading(true);
-    const data = new FormData();
-    data.append('studentFile', file);
-    data.append('examId', selected._id);
-
+  const fetchConcours = async () => {
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/submissions`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const res = await axios.get(`${API}/api/concours`);
+      const concours = res.data.data || res.data;
+
+      const data = concours.map(concour => {
+        const epreuvesSorted = [...(concour.epreuves || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const epreuvesWithRealOrder = epreuvesSorted.map((ep, idx) => ({ ...ep, realOrder: idx }));
+        return { ...concour, epreuves: epreuvesWithRealOrder };
       });
-      setMsg('✅ Copie soumise avec succès');
-      setFile(null);
-      setSelected(null);
-      setTimeout(() => setMsg(''), 3000);
+      setConcoursList(data);
     } catch (err) {
-      setMsg('❌ Erreur lors de la soumission');
+      console.error('Erreur chargement concours:', err);
+      showToast('Erreur lors du chargement', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const getRange = (realOrder, nbQ) => {
+    const start = realOrder * nbQ + 1;
+    const end = (realOrder + 1) * nbQ;
+    return `Q${start}–Q${end}`;
+  };
+
+  const downloadExamFile = async (epreuveId) => {
+    try {
+      const res = await axios.get(`${API}/api/concours/${epreuveId}/exam-file`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'epreuve.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentElement.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erreur téléchargement exam:', err);
+      showToast('Erreur lors du téléchargement', 'error');
+    }
+  };
+
+  const downloadAnswerGrid = async (concoursId) => {
+    try {
+      const res = await axios.get(`${API}/api/concours/${concoursId}/answer-grid`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'grille-reponses.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentElement.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erreur téléchargement grille:', err);
+      showToast('Erreur lors du téléchargement', 'error');
+    }
+  };
+
+  const handleSubmitFull = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      showToast('Veuillez sélectionner un fichier PDF', 'error');
+      return;
+    }
+    setSubmitting(true);
+    const fd = new FormData();
+    fd.append('studentFile', file);
+    fd.append('concoursId', submitModal._id);
+    try {
+      await axios.post(`${API}/api/submissions`, fd);
+      showToast('Copie soumise avec succès !');
+      setSubmitModal(null);
+      setFile(null);
+    } catch (err) {
+      console.error('Erreur soumission:', err);
+      showToast('Erreur lors de la soumission', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openSheet = (epreuve, concours) => {
+    setSelected(epreuve);
+    setSelConcours(concours);
+  };
+
+  const byYear = concoursList.reduce((acc, c) => {
+    if (!acc[c.year]) acc[c.year] = [];
+    acc[c.year].push(c);
+    return acc;
+  }, {});
+
+  if (loading) return (
+    <Layout>
+      <div className="page-loading">
+        <span className="spinner spinner-lg" />
+        <span>Chargement des concours...</span>
+      </div>
+    </Layout>
+  );
+
   return (
     <Layout>
-      <div>
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800">📚 Épreuves disponibles</h1>
-          <p className="text-gray-600 mt-2">Sélectionnez les épreuves pour accéder aux fichiers et soumettre votre copie</p>
-        </div>
-
-        {msg && (
-          <div className={`mb-6 p-4 rounded-lg ${msg.includes('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-            {msg}
-          </div>
-        )}
-
-        {/* Parcourir par année */}
-        {Object.entries(examsByYearAndUniversity).map(([year, universities]) => (
-          <div key={year} className="mb-12">
-            {/* Titre année */}
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b-2 border-blue-200">
-              <FaCalendarAlt className="text-2xl text-blue-600" />
-              <h2 className="text-2xl font-bold text-gray-800">{year}</h2>
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                {Object.values(universities).flat().length} épreuve(s)
-              </span>
-            </div>
-
-            {/* Grille d'épreuves par université */}
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-1">
-              {Object.entries(universities).map(([university, universityExams]) => (
-                <div key={university} className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                  {/* Header université */}
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 flex items-center gap-3">
-                    <FaSchool className="text-2xl" />
-                    <div>
-                      <h3 className="font-bold text-lg">{university}</h3>
-                      <p className="text-blue-100 text-sm">{universityExams.length} matière(s)</p>
-                    </div>
-                  </div>
-
-                  {/* Épreuves */}
-                  <div className="p-4 space-y-3">
-                    {universityExams.map((exam) => (
-                      <div
-                        key={exam._id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer hover:border-blue-300"
-                      >
-                        <div className="flex justify-between items-start gap-3">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800">{exam.title}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{exam.description}</p>
-                          </div>
-                          <button
-                            onClick={() => setSelected(exam)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold transition"
-                          >
-                            Soumettre
-                          </button>
-                        </div>
-
-                        {/* Téléchargements */}
-                        <div className="mt-3 flex gap-2">
-                          <a
-                            href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${exam.examFile.path}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs font-semibold"
-                          >
-                            <FaDownload /> Épreuve
-                          </a>
-                          <a
-                            href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${exam.answerGridFile.path}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-xs font-semibold"
-                          >
-                            <FaDownload /> Grille réponse
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+      <div className="page-header">
+        <h1>
+          <span className="icon"><FaBook /></span>
+          Bibliothèque des concours
+        </h1>
+        <p>Accédez aux annales, entraînez-vous par matière et recevez des feedbacks personnalisés par IA.</p>
       </div>
 
-      {/* Modal Soumission */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Soumettre votre copie</h3>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">
-                <FaTimes className="text-xl" />
-              </button>
+      {Object.keys(byYear).length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <div className="empty-state-icon">📚</div>
+            <h3>Aucun concours disponible</h3>
+            <p>Les concours seront ajoutés prochainement.</p>
+          </div>
+        </div>
+      ) : (
+        Object.entries(byYear)
+          .sort((a, b) => b[0].localeCompare(a[0]))
+          .map(([year, concours]) => (
+            <div key={year} style={{ marginBottom: 40 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+                <FaCalendarAlt style={{ color: 'var(--accent)', fontSize: 16 }} />
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Année {year}</h2>
+                <span className="badge badge-info">{concours.length} concours</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+                {concours.map(concour => {
+                  const epreuves = concour.epreuves || [];
+                  return (
+                    <div key={concour._id} className="concours-card">
+                      <div className="concours-card-header">
+                        <h3>{concour.title}</h3>
+                        <p>{epreuves.length} matière(s) · {epreuves[0]?.nbQuestionsParBloc || 20} QCM chacune</p>
+                      </div>
+
+                      <div style={{ padding: '12px 16px' }}>
+                        {epreuves.length === 0 ? (
+                          <p style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', padding: '12px 0' }}>
+                            Aucune matière ajoutée
+                          </p>
+                        ) : epreuves.map(ep => {
+                          const nbQ = ep.nbQuestionsParBloc || 20;
+                          const m = SUBJECT_META[ep.subject] || { emoji: '📄', color: '#4f8ef7', bg: 'rgba(79,142,247,0.1)', label: ep.subject };
+                          return (
+                            <div key={ep._id} className="subject-row">
+                              <div className="subject-info">
+                                <span className="subject-emoji">{m.emoji}</span>
+                                <div>
+                                  <div className="subject-name">{m.label}</div>
+                                  <div className="subject-questions">{getRange(ep.realOrder, nbQ)}</div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                {ep.examFile?.originalName && (
+                                  <button
+                                    onClick={() => downloadExamFile(ep._id)}
+                                    className="btn btn-ghost btn-sm"
+                                    title="Télécharger le PDF"
+                                    style={{ padding: '5px 10px', cursor: 'pointer' }}
+                                  >
+                                    <FaDownload style={{ fontSize: 11 }} />
+                                  </button>
+                                )}
+                                <button
+                                  className="btn btn-sm"
+                                  style={{ background: m.bg, color: m.color, border: `1px solid ${m.color}33` }}
+                                  onClick={() => openSheet(ep, concour)}
+                                >
+                                  ✏️ Répondre
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="card-footer" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {concour.answerGridFile?.originalName && (
+                          <button
+                            onClick={() => downloadAnswerGrid(concour._id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 8,
+                              fontSize: 13,
+                              color: 'var(--green)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '6px 0',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <FaEye /> Voir la grille de correction
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-ghost btn-full"
+                          onClick={() => setSubmitModal(concour)}
+                          style={{ fontSize: 13 }}
+                        >
+                          <FaUpload /> Soumettre ma copie complète
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          ))
+      )}
 
-            {/* Info épreuve */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm font-semibold text-blue-900">{selected.title}</p>
-              <p className="text-xs text-blue-700 mt-1">{selected.description}</p>
+      {selectedEpreuve && selectedConcours && (
+        <AnswerSheet
+          epreuve={selectedEpreuve}
+          concours={selectedConcours}
+          onClose={() => { setSelected(null); setSelConcours(null); }}
+          onSuccess={() => showToast('Opération réussie !')}
+        />
+      )}
+
+      {submitModal && (
+        <div className="modal-overlay" onClick={() => setSubmitModal(null)}>
+          <div className="modal animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Soumettre ma copie complète</h3>
+              <button className="btn-icon" onClick={() => setSubmitModal(null)}><FaTimes /></button>
             </div>
+            <form onSubmit={handleSubmitFull}>
+              <div className="modal-body">
+                <div className="alert alert-success" style={{ marginBottom: 16 }}>
+                  <FaFilePdf />
+                  <span>Soumettez toutes les matières en un seul fichier PDF ({submitModal.title})</span>
+                </div>
 
-            {/* Formulaire */}
-            <form onSubmit={submit}>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                <FaFileAlt className="inline mr-2" />
-                Votre copie remplie (PDF)
-              </label>
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setFile(e.target.files[0])}
-                className="w-full mb-4 p-2 border rounded-lg"
-                required
-              />
-
-              {file && (
-                <p className="text-xs text-gray-600 mb-4">
-                  ✅ Fichier sélectionné: <span className="font-semibold">{file.name}</span>
-                </p>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50"
-                >
-                  {loading ? 'Envoi...' : '📤 Envoyer'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg font-semibold transition"
-                >
-                  Annuler
+                <label className={`file-drop ${file ? 'has-file' : ''}`} htmlFor="full-copy-input" style={{ cursor: 'pointer' }}>
+                  <input id="full-copy-input" type="file" accept=".pdf" onChange={e => setFile(e.target.files[0])} />
+                  {file ? (
+                    <>
+                      <div className="file-drop-icon"><FaCheckCircle /></div>
+                      <div className="file-drop-text" style={{ color: 'var(--green)', fontWeight: 600 }}>{file.name}</div>
+                      <div className="file-drop-hint">Cliquez pour changer</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="file-drop-icon"><FaUpload /></div>
+                      <div className="file-drop-text">Cliquez pour sélectionner votre copie (PDF)</div>
+                      <div className="file-drop-hint">Taille max : 20 Mo</div>
+                    </>
+                  )}
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setSubmitModal(null)}>Annuler</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting || !file}>
+                  {submitting ? 'Envoi en cours...' : 'Soumettre'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>
+          {toast.type === 'success' ? '✅' : '⚠️'} {toast.msg}
+        </div>
+      )}
     </Layout>
   );
-};
-
-export default Exams;
+}

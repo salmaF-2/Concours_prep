@@ -1,17 +1,17 @@
 const path = require('path');
 const axios = require('axios');
 const Submission = require('../models/Submission');
-const Exam = require('../models/Exam');
+const Concours = require('../models/Concours');
 
 exports.submitExam = async (req, res) => {
   try {
-    const { examId } = req.body;
-    const exam = await Exam.findById(examId);
-    if (!exam) return res.status(404).json({ message: 'Épreuve non trouvée' });
+    const { concoursId } = req.body;
+    const concours = await Concours.findById(concoursId);
+    if (!concours) return res.status(404).json({ message: 'Concours non trouvé' });
 
     const submission = new Submission({
       student: req.user.id,
-      exam: examId,
+      concours: concoursId,
       studentFile: { filename: req.file.filename, path: req.file.path, originalName: req.file.originalname },
       status: 'pending',
     });
@@ -23,10 +23,10 @@ exports.submitExam = async (req, res) => {
         submissionId: submission._id.toString(),
         studentId: req.user.id,
         studentEmail: req.user.email,
-        examId: exam._id.toString(),
-        examTitle: exam.title,
+        concoursId: concours._id.toString(),
+        concoursTitle: concours.title,
         studentFileUrl: `${process.env.API_URL || 'http://localhost:5000'}/${submission.studentFile.path}`,
-        answerGridUrl: `${process.env.API_URL || 'http://localhost:5000'}/${exam.answerGridFile.path}`,
+        answerGridUrl: `${process.env.API_URL || 'http://localhost:5000'}/${concours.answerGridFile.path}`,
         callbackUrl: `${process.env.API_URL || 'http://localhost:5000'}/api/submissions/webhook/n8n-callback`,
       });
       submission.status = 'processing';
@@ -37,7 +37,7 @@ exports.submitExam = async (req, res) => {
       await submission.save();
     }
 
-    res.status(201).json({ submission, message: 'Votre copie a été soumise. Le feedback sera disponible prochainement.' });
+    res.status(201).json({ submission, message: 'Votre copie a été soumise avec succès. La correction sera disponible prochainement.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -72,7 +72,7 @@ exports.n8nCallback = async (req, res) => {
 
 exports.getMySubmissions = async (req, res) => {
   try {
-    const submissions = await Submission.find({ student: req.user.id }).populate('exam').sort({ submittedAt: -1 });
+    const submissions = await Submission.find({ student: req.user.id }).populate('concours').sort({ submittedAt: -1 });
     res.json(submissions);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -81,7 +81,7 @@ exports.getMySubmissions = async (req, res) => {
 
 exports.getSubmissionById = async (req, res) => {
   try {
-    const submission = await Submission.findById(req.params.id).populate('exam').populate('student', 'name email');
+    const submission = await Submission.findById(req.params.id).populate('concours').populate('student', 'name email');
     if (!submission) return res.status(404).json({ message: 'Soumission non trouvée' });
     if (submission.student._id.toString() !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ message: 'Accès non autorisé' });
     res.json(submission);

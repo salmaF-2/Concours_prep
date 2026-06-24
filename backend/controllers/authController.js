@@ -1,3 +1,4 @@
+// controllers/authController.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -25,7 +26,9 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
+    }
 
     const token = generateToken(user);
     res.json({ token, user: { id: user._id, name: user.name, email, role: user.role } });

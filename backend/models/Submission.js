@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const submissionSchema = new mongoose.Schema({
   student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true },
+  concours: { type: mongoose.Schema.Types.ObjectId, ref: 'Concours', required: true },
   studentFile: {
     filename: String,
     path: String,
