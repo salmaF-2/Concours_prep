@@ -996,7 +996,7 @@ const Answer = require('../models/Answer');
 const Concours = require('../models/Concours');
 const Epreuve = require('../models/Epreuve');
 const https = require('https');
-
+const path = require('path');
 /* ──────────────────────────────────────────
    POST /api/answers — créer ou mettre à jour
 ────────────────────────────────────────── */
@@ -1367,6 +1367,178 @@ exports.n8nCallback = async (req, res) => {
     res.json({ success: true, message: 'Callback traité' });
   } catch (err) {
     console.error('n8n callback error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.submitPdfAnswers = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { concoursId, epreuveId, nom, prenom, code_candidat } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'PDF requis' });
+    }
+
+    if (!concoursId || !epreuveId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Concours et épreuve requis',
+      });
+    }
+
+    if (!process.env.N8N_EXTRACT_WEBHOOK_URL) {
+      return res.status(500).json({
+        success: false,
+        message: 'N8N_EXTRACT_WEBHOOK_URL non configuré dans .env',
+      });
+    }
+
+    if (!process.env.API_URL) {
+      return res.status(500).json({
+        success: false,
+        message: 'API_URL non configuré dans .env',
+      });
+    }
+
+    const concours = await Concours.findById(concoursId);
+    const epreuve = await Epreuve.findById(epreuveId);
+
+    if (!concours || !epreuve) {
+      return res.status(404).json({
+        success: false,
+        message: 'Concours ou épreuve introuvable',
+      });
+    }
+
+    const answer = await Answer.create({
+      student: studentId,
+      concours: concoursId,
+      epreuve: epreuveId,
+      nom: nom || '',
+      prenom: prenom || '',
+      code_candidat: code_candidat || `CAND${Date.now()}`,
+      answers: {},
+      source: 'pdf',
+      status: 'extracting',
+      uploadedPdf: {
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+      },
+      workflow_triggered_at: new Date(),
+    });
+
+    const form = new FormData();
+
+    form.append('file', fs.createReadStream(req.file.path), {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
+
+    form.append('answerId', answer._id.toString());
+    form.append('studentId', studentId);
+    form.append('concoursId', concoursId);
+    form.append('epreuveId', epreuveId);
+    form.append('subject', epreuve.subject);
+    form.append('nbQuestions', String(epreuve.nbQuestionsParBloc || 20));
+    form.append(
+      'callbackUrl',
+      `${process.env.API_URL}/api/answers/webhook/extract-callback`
+    );
+
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
+    await axios.post(process.env.N8N_EXTRACT_WEBHOOK_URL, form, {
+      headers: form.getHeaders(),
+      timeout: 60000,
+      httpsAgent,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+
+    fs.unlink(req.file.path, () => {});
+
+    res.status(201).json({
+      success: true,
+      message: 'PDF envoyé vers n8n pour extraction',
+      data: answer,
+    });
+
+  } catch (err) {
+    console.error('submitPdfAnswers error:', err);
+
+    if (req.file?.path) {
+      fs.unlink(req.file.path, () => {});
+    }
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      code: err.code || null,
+    });
+  }
+};
+exports.n8nExtractCallback = async (req, res) => {
+  try {
+    const {
+      answerId,
+      answers,
+      nom,
+      prenom,
+      code_candidat,
+      date_de_naissance,
+      status,
+      error,
+    } = req.body;
+
+    if (!answerId) {
+      return res.status(400).json({ success: false, message: 'answerId manquant' });
+    }
+
+    const answer = await Answer.findById(answerId);
+    if (!answer) {
+      return res.status(404).json({ success: false, message: 'Réponse non trouvée' });
+    }
+
+    if (status === 'failed') {
+      answer.status = 'failed';
+      answer.error = error || 'Extraction échouée';
+      await answer.save();
+      return res.json({ success: true, message: 'Erreur enregistrée' });
+    }
+
+    const cleaned = {};
+    Object.entries(answers || {}).forEach(([key, value]) => {
+      if (/^Q\d+$/.test(key)) {
+        cleaned[key] = value === 'unknown' || value === 'multiple' ? '' : value;
+      }
+    });
+
+    answer.answers = cleaned;
+    if (nom) answer.nom = nom;
+    if (prenom) answer.prenom = prenom;
+    if (code_candidat) answer.code_candidat = code_candidat;
+
+    answer.result = {
+      ...(answer.result || {}),
+      date_de_naissance: date_de_naissance || '',
+      extraction: req.body,
+    };
+
+    answer.status = 'saved';
+    await answer.save();
+
+    res.json({
+      success: true,
+      message: 'Réponses extraites et sauvegardées',
+      data: answer,
+    });
+
+  } catch (err) {
+    console.error('n8nExtractCallback error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

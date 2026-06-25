@@ -116,8 +116,9 @@ router.get('/:id/feedback', authMiddleware, ctrl.getAnswerFeedback);
 
 // ── Workflow ───────────────────────────────────────────────────────
 router.post('/:id/trigger', authMiddleware, ctrl.triggerN8n);
+router.post('/submit-pdf', authMiddleware, upload.single('pdf'), ctrl.submitPdfAnswers);
 router.post('/webhook/n8n-callback', ctrl.n8nCallback);
-
+router.post('/webhook/extract-callback', ctrl.n8nExtractCallback);
 // ── Extraction IA depuis image ─────────────────────────────────────
 router.post('/extract-image', authMiddleware, upload.single('image'), ctrl.extractImage);
 

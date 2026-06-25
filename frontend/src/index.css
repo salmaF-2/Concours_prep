@@ -2,37 +2,39 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+
+html { scroll-behavior: smooth; }
+
 :root {
-  --bg:        #0a0e1a;
-  --bg2:       #0f1629;
-  --bg3:       #141d35;
-  --surface:   #1a2340;
-  --surface2:  #1f2a4a;
-  --border:    rgba(99,120,200,0.18);
-  --border2:   rgba(99,120,200,0.30);
+  --bg: #f7f9fc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
 
-  --accent:    #4f8ef7;
-  --accent2:   #6aa3ff;
-  --green:     #34d399;
-  --amber:     #fbbf24;
-  --red:       #f87171;
-  --purple:    #a78bfa;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
 
-  --text:      #e8edf8;
-  --text2:     #9aa5c4;
-  --text3:     #5a6784;
+  --accent: #2563eb;
+  --accent2: #1d4ed8;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --purple: #7c3aed;
 
-  --radius:    14px;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #64748b;
+
+  --radius: 14px;
   --radius-sm: 8px;
   --radius-lg: 20px;
   --radius-xl: 28px;
 
-  --shadow:    0 4px 24px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
-  --glow:      0 0 24px rgba(79,142,247,0.25);
+  --shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.14);
+  --glow: 0 0 0 transparent;
 }
-
-html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Sora', sans-serif;
@@ -40,9 +42,57 @@ body {
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(79,142,247,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(167,139,250,0.07) 0%, transparent 60%);
+  background-image: none;
+}
+
+.navbar {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.card,
+.modal,
+.stat-card,
+.concours-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent2);
+}
+
+.btn-ghost {
+  background: #ffffff;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg3);
+  color: var(--text);
 }
 
 /* ── SCROLLBAR ── */
