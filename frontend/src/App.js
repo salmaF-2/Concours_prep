@@ -43,12 +43,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { Login }    from './pages/Login';
+import  Login    from './pages/Login';
 import Register     from './pages/Register';
 import Dashboard    from './pages/Dashboard';
 import Exams        from './pages/Exams';
 import History      from './pages/History';
-import { Submissions, SubmissionDetail } from './pages/Submissions';
+import  Submissions from './pages/Submissions';
+import SubmissionDetail  from './pages/SubmissionDetail';
 import AdminExams   from './pages/AdminExams';
 import PrivateRoute from './components/PrivateRoute';
 import './index.css';

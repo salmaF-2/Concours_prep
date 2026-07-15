@@ -120,6 +120,6 @@ router.post('/submit-pdf', authMiddleware, upload.single('pdf'), ctrl.submitPdfA
 router.post('/webhook/n8n-callback', ctrl.n8nCallback);
 router.post('/webhook/extract-callback', ctrl.n8nExtractCallback);
 // ── Extraction IA depuis image ─────────────────────────────────────
-router.post('/extract-image', authMiddleware, upload.single('image'), ctrl.extractImage);
+// router.post('/extract-image', authMiddleware, upload.single('image'), ctrl.extractImage);
 
 module.exports = router;

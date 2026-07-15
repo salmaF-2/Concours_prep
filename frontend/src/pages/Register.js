@@ -1,152 +1,206 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaStethoscope, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import {
+  AlertCircle,
+  ArrowRight,
+  Award,
+  BookOpen,
+  Brain,
+  GraduationCap,
+  Lock,
+  Mail,
+  User
+} from 'lucide-react';
 
-const Register = () => {
+export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
+  const features = [
+    { icon: BookOpen, title: 'Annales completes', desc: 'Toutes les matieres officielles' },
+    { icon: Brain, title: 'Feedback IA', desc: 'Analyse intelligente des reponses' },
+    { icon: Award, title: 'Plan personnalise', desc: 'Adapte a vos lacunes' },
+  ];
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (password !== confirm) {
       setError('Les mots de passe ne correspondent pas');
       return;
     }
+
     setLoading(true);
+    setError('');
+
     try {
       await register(name, email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur d\'inscription');
+      setError(err.response?.data?.message || "Erreur lors de l'inscription");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-layout">
-      <div className="auth-panel">
-        <div className="hero-panel">
-          <div>
-            <div className="brand-badge mb-6">
-              <FaStethoscope className="text-3xl" />
+    <div className="auth-wrap">
+      <section className="auth-side">
+        <div>
+          <div className="mb-8 flex items-center gap-3">
+            <div className="brand-icon h-12 w-12">
+              <GraduationCap size={24} />
             </div>
-            <h1 className="text-4xl font-bold mb-4 text-slate-900">Inscrivez-vous et démarrez votre entraînement</h1>
-            <p className="text-gray-600 leading-relaxed mb-8">
-              Accédez aux annales classées par année et université, téléchargez les corrections et suivez vos progrès.
-            </p>
-
-            <div className="grid gap-4">
-              <div className="glass-card">
-                <p className="text-sm text-gray-500">Système simple</p>
-                <p className="font-semibold text-slate-900">Organisez votre révision</p>
-              </div>
-              <div className="glass-card">
-                <p className="text-sm text-gray-500">Feedback rapide</p>
-                <p className="font-semibold text-slate-900">Recevez vos corrections PDF</p>
-              </div>
+            <div>
+              <div className="brand-name text-lg">ConcoursPrep</div>
+              <div className="brand-sub">Preparation Medecine</div>
             </div>
           </div>
 
-          <div className="text-sm text-gray-500 mt-8">
-            <p>Plateforme pensée pour les candidats marocains, avec une interface claire et moderne.</p>
+          <h1 className="text-4xl font-extrabold leading-tight text-ink">
+            Construisez une preparation plus claire.
+          </h1>
+
+          <p className="mt-4 max-w-md text-sm font-medium leading-7 text-slate-500">
+            Creez votre compte et commencez votre parcours vers la reussite du concours.
+          </p>
+
+          <div className="mt-8 space-y-3">
+            {features.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="auth-feature">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-aqua-50 text-aqua-700">
+                    <Icon size={19} />
+                  </div>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <small>{item.desc}</small>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="auth-card">
-          <h2 className="text-3xl font-bold mb-3 text-slate-900">Créer un compte</h2>
-          <p className="text-gray-600 mb-6">Complétez les informations ci-dessous pour commencer.</p>
+        <p className="border-t border-line pt-5 text-xs font-semibold text-slate-400">
+          Acces gratuit · Maroc 2026
+        </p>
+      </section>
+
+      <section className="auth-form-wrap">
+        <div className="w-full max-w-sm">
+          <div className="mb-6">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-xl bg-aqua-50 px-3 py-1.5 text-xs font-extrabold text-aqua-700">
+              <Award size={14} />
+              Nouveau candidat
+            </div>
+
+            <h2 className="text-3xl font-extrabold text-ink">Creer un compte</h2>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Remplissez les informations pour commencer.
+            </p>
+          </div>
 
           {error && (
-            <div className="alert alert-danger mb-6">
-              <span>⚠️</span>
+            <div className="mb-4 flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+              <AlertCircle size={16} />
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="label">Nom complet</label>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Nom complet</label>
               <div className="relative">
-                <FaUser className="input-icon" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
                 <input
                   type="text"
+                  className="form-input pl-10"
+                  placeholder="Prenom Nom"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Votre nom"
-                  className="input-field pl-11"
+                  onChange={(event) => setName(event.target.value)}
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <label className="label">Email</label>
+            <div className="form-group">
+              <label className="form-label">Adresse email</label>
               <div className="relative">
-                <FaEnvelope className="input-icon" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  className="form-input pl-10"
                   placeholder="votre@email.com"
-                  className="input-field pl-11"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <label className="label">Mot de passe</label>
+            <div className="form-group">
+              <label className="form-label">Mot de passe</label>
               <div className="relative">
-                <FaLock className="input-icon" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
                 <input
                   type="password"
+                  className="form-input pl-10"
+                  placeholder="Minimum 8 caracteres"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="input-field pl-11"
+                  onChange={(event) => setPassword(event.target.value)}
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <label className="label">Confirmer mot de passe</label>
+            <div className="form-group">
+              <label className="form-label">Confirmer le mot de passe</label>
               <div className="relative">
-                <FaLock className="input-icon" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
                 <input
                   type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="input-field pl-11"
+                  className="form-input pl-10"
+                  placeholder="Confirmez votre mot de passe"
+                  value={confirm}
+                  onChange={(event) => setConfirm(event.target.value)}
                   required
                 />
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="button-gradient w-full">
-              {loading ? 'Inscription en cours...' : 'S\'inscrire'}
+            <button type="submit" disabled={loading} className="btn btn-primary btn-full mt-2">
+              {loading ? (
+                <>
+                  <span className="spinner" />
+                  Creation...
+                </>
+              ) : (
+                <>
+                  Creer mon compte
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </form>
 
-          <p className="text-center text-gray-500 mt-6">
-            Vous avez déjà un compte ?{' '}
-            <Link to="/login" className="text-sky-700 font-semibold hover:text-sky-800">
+          <p className="mt-5 text-center text-sm font-medium text-slate-500">
+            Deja un compte ?{' '}
+            <Link to="/login" className="font-extrabold text-aqua-700 no-underline">
               Se connecter
             </Link>
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
-};
-
-export default Register;
+}

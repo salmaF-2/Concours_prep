@@ -1,38 +1,133 @@
-.App {
-  text-align: center;
+/* app.css - Bootstrap personnalisé */
+
+/* Utiliser Bootstrap uniquement pour la grille et les utilitaires de base */
+@import '~bootstrap/dist/css/bootstrap.min.css';
+
+/* Override Bootstrap avec nos variables */
+.text-accent {
+  color: var(--accent) !important;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.text-green {
+  color: var(--green) !important;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.text-amber {
+  color: var(--amber) !important;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.text-red {
+  color: var(--red) !important;
 }
 
-.App-link {
-  color: #61dafb;
+.text-purple {
+  color: var(--purple) !important;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.bg-accent-light {
+  background: rgba(37, 99, 235, 0.1) !important;
+}
+
+.bg-green-light {
+  background: rgba(22, 163, 74, 0.1) !important;
+}
+
+.bg-amber-light {
+  background: rgba(217, 119, 6, 0.1) !important;
+}
+
+.bg-purple-light {
+  background: rgba(124, 58, 237, 0.1) !important;
+}
+
+.border-accent {
+  border-color: var(--accent) !important;
+}
+
+.rounded-custom {
+  border-radius: var(--radius) !important;
+}
+
+.shadow-custom {
+  box-shadow: var(--shadow) !important;
+}
+
+/* Utilitaires Bootstrap étendus */
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+.gap-3 {
+  gap: 1rem !important;
+}
+
+.gap-4 {
+  gap: 1.5rem !important;
+}
+
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+.transition {
+  transition: all 0.2s ease !important;
+}
+
+/* Override des boutons Bootstrap */
+.btn-primary-custom {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+}
+
+.btn-primary-custom:hover {
+  background: var(--accent2) !important;
+  border-color: var(--accent2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.3);
+}
+
+.btn-ghost-custom {
+  background: white !important;
+  color: var(--text2) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.btn-ghost-custom:hover {
+  background: var(--bg3) !important;
+  color: var(--text) !important;
+}
+
+/* Badges Bootstrap personnalisés */
+.badge-accent {
+  background: rgba(37, 99, 235, 0.1) !important;
+  color: var(--accent) !important;
+  border: 1px solid rgba(37, 99, 235, 0.18) !important;
+}
+
+/* Cards Bootstrap personnalisées */
+.card-custom {
+  background: white !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow) !important;
+  overflow: hidden !important;
+}
+
+/* Form Bootstrap personnalisé */
+.form-control-custom {
+  padding: 11px 14px !important;
+  background: var(--bg2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  color: var(--text) !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  outline: none !important;
+}
+
+.form-control-custom:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }

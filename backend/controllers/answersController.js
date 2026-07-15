@@ -1135,85 +1135,198 @@ exports.getMyAnswers = async (req, res) => {
 /* ──────────────────────────────────────────
    GET /api/answers/:id/feedback
 ────────────────────────────────────────── */
+// exports.getAnswerFeedback = async (req, res) => {
+//   try {
+//     const answer = await Answer.findById(req.params.id)
+//       .populate('epreuve')
+//       .populate('concours', 'title year');
+//     if (!answer) return res.status(404).json({ success: false, message: 'Non trouvé' });
+//     if (answer.student.toString() !== req.user.id && req.user.role !== 'admin')
+//       return res.status(403).json({ success: false, message: 'Non autorisé' });
+//     res.json({ success: true, data: answer });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
 exports.getAnswerFeedback = async (req, res) => {
   try {
     const answer = await Answer.findById(req.params.id)
       .populate('epreuve')
       .populate('concours', 'title year');
-    if (!answer) return res.status(404).json({ success: false, message: 'Non trouvé' });
-    if (answer.student.toString() !== req.user.id && req.user.role !== 'admin')
-      return res.status(403).json({ success: false, message: 'Non autorisé' });
-    res.json({ success: true, data: answer });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
 
-/* ──────────────────────────────────────────
-   POST /api/answers/extract-image
-────────────────────────────────────────── */
-exports.extractImage = async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ success: false, message: 'Image requise' });
-
-    const startQ = parseInt(req.body.startQ) || 1;
-    const nbQ = parseInt(req.body.nbQuestions) || 20;
-    const endQ = startQ + nbQ - 1;
-
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const imageBase64 = imageBuffer.toString('base64');
-    const mimeType = req.file.mimetype;
-
-    const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (!openrouterKey) {
-      return await extractViaWebhook(req, res, startQ, nbQ);
+    if (!answer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Non trouvé',
+      });
     }
 
-    const prompt = `Tu es un expert en lecture de grilles de réponses QCM pour les concours médicaux (FMPO Maroc).
+    if (answer.student.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Non autorisé',
+      });
+    }
 
-Cette image contient une grille de réponses QCM. Extrait les réponses du bloc Q${startQ} à Q${endQ}.
+    const answerObj = answer.toObject();
 
-RÈGLES:
-- Une case cochée (X ou ■) = la réponse sélectionnée.
-- Colonnes de gauche à droite : A, B, C, D, E.
-- Si aucune case cochée : retourne "".
-- Réponds UNIQUEMENT en JSON valide sans markdown.
+    const nomPrenom = `${answer.prenom || ''} ${answer.nom || ''}`.trim();
+    const nomPrenomInverse = `${answer.nom || ''} ${answer.prenom || ''}`.trim();
 
-Format: {"Q${startQ}":"A","Q${startQ+1}":"B",...,"Q${endQ}":""}`;
+    const concoursTitle =
+      answer.concours?.title ||
+      answerObj.concours?.title ||
+      '';
 
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: 'anthropic/claude-sonnet-4-5',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
-            { type: 'text', text: prompt },
-          ],
-        }],
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${openrouterKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.API_URL || 'http://localhost:5000',
-        },
-        timeout: 30000,
+    const matiere =
+      answer.epreuve?.subject ||
+      answer.epreuve?.title ||
+      '';
+
+    let feedbackComplet = null;
+
+    try {
+      const filters = [
+        { answerId: answer._id.toString() },
+        { answer_id: answer._id.toString() },
+        { answer: answer._id.toString() },
+      ];
+
+      if (nomPrenom) {
+        filters.push({ nom_prenom: nomPrenom });
+        filters.push({ nom_prenom: { $regex: new RegExp(nomPrenom, 'i') } });
       }
-    );
 
-    const raw = response.data.choices[0].message.content;
-    const extracted = JSON.parse(raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
-    fs.unlink(req.file.path, () => {});
-    res.json({ success: true, answers: extracted });
+      if (nomPrenomInverse) {
+        filters.push({ nom_prenom: nomPrenomInverse });
+        filters.push({ nom_prenom: { $regex: new RegExp(nomPrenomInverse, 'i') } });
+      }
+
+      if (nomPrenom && concoursTitle) {
+        filters.push({
+          nom_prenom: { $regex: new RegExp(nomPrenom, 'i') },
+          concours: concoursTitle,
+        });
+      }
+
+      if (nomPrenom && matiere) {
+        filters.push({
+          nom_prenom: { $regex: new RegExp(nomPrenom, 'i') },
+          epreuve_matiere: { $regex: new RegExp(matiere, 'i') },
+        });
+      }
+
+      feedbackComplet = await mongoose.connection.db
+        .collection('feedback_complets')
+        .findOne({ $or: filters });
+    } catch (err) {
+      console.warn('Feedback complet introuvable:', err.message);
+    }
+
+    if (feedbackComplet) {
+      answerObj.feedback_complet = feedbackComplet;
+
+      answerObj.result = {
+        ...(answerObj.result || {}),
+        feedback: feedbackComplet.feedback_ai_complet || answerObj.result?.feedback,
+        feedback_ai_complet: feedbackComplet.feedback_ai_complet,
+        plan_complet: feedbackComplet.plan_complet,
+        profil_erreurs: feedbackComplet.feedback_ai_complet?.profil_erreurs,
+        score: feedbackComplet.score ?? answerObj.result?.score,
+        mention: feedbackComplet.mention ?? answerObj.result?.mention,
+        nb_questions:
+          feedbackComplet.feedback_ai_complet?.questions?.length ||
+          answerObj.result?.nb_questions ||
+          answer.epreuve?.nbQuestionsParBloc ||
+          20,
+      };
+    }
+
+    return res.json({
+      success: true,
+      data: answerObj,
+    });
   } catch (err) {
-    console.error('extractImage error:', err.message);
-    if (req.file?.path) fs.unlink(req.file.path, () => {});
-    res.status(500).json({ success: false, message: err.message });
+    console.error('getAnswerFeedback error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
+  console.log('Recherche feedback_complets avec:', {
+  answerId: answer._id.toString(),
+  nomPrenom,
+  nomPrenomInverse,
+  concoursTitle,
+  matiere,
+});
 };
+// /* ──────────────────────────────────────────
+//    POST /api/answers/extract-image
+// ────────────────────────────────────────── */
+// exports.extractImage = async (req, res) => {
+//   try {
+//     if (!req.file) return res.status(400).json({ success: false, message: 'Image requise' });
+
+//     const startQ = parseInt(req.body.startQ) || 1;
+//     const nbQ = parseInt(req.body.nbQuestions) || 20;
+//     const endQ = startQ + nbQ - 1;
+
+//     const imageBuffer = fs.readFileSync(req.file.path);
+//     const imageBase64 = imageBuffer.toString('base64');
+//     const mimeType = req.file.mimetype;
+
+//     const openrouterKey = process.env.OPENROUTER_API_KEY;
+//     if (!openrouterKey) {
+//       return await extractViaWebhook(req, res, startQ, nbQ);
+//     }
+
+//     const prompt = `Tu es un expert en lecture de grilles de réponses QCM pour les concours médicaux (FMPO Maroc).
+
+// Cette image contient une grille de réponses QCM. Extrait les réponses du bloc Q${startQ} à Q${endQ}.
+
+// RÈGLES:
+// - Une case cochée (X ou ■) = la réponse sélectionnée.
+// - Colonnes de gauche à droite : A, B, C, D, E.
+// - Si aucune case cochée : retourne "".
+// - Réponds UNIQUEMENT en JSON valide sans markdown.
+
+// Format: {"Q${startQ}":"A","Q${startQ+1}":"B",...,"Q${endQ}":""}`;
+
+//     const response = await axios.post(
+//       'https://openrouter.ai/api/v1/chat/completions',
+//       {
+//         model: 'anthropic/claude-sonnet-4-5',
+//         max_tokens: 500,
+//         messages: [{
+//           role: 'user',
+//           content: [
+//             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+//             { type: 'text', text: prompt },
+//           ],
+//         }],
+//       },
+//       {
+//         headers: {
+//           'Authorization': `Bearer ${openrouterKey}`,
+//           'Content-Type': 'application/json',
+//           'HTTP-Referer': process.env.API_URL || 'http://localhost:5000',
+//         },
+//         timeout: 30000,
+//       }
+//     );
+
+//     const raw = response.data.choices[0].message.content;
+//     const extracted = JSON.parse(raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+//     fs.unlink(req.file.path, () => {});
+//     res.json({ success: true, answers: extracted });
+//   } catch (err) {
+//     console.error('extractImage error:', err.message);
+//     if (req.file?.path) fs.unlink(req.file.path, () => {});
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
 
 async function extractViaWebhook(req, res, startQ, nbQ) {
   try {

@@ -1,169 +1,114 @@
-// import React from 'react';
-// import { Link, useNavigate, useLocation } from 'react-router-dom';
-// import { useAuth } from '../context/AuthContext';
-// import { FaStethoscope, FaThLarge, FaBook, FaClipboardList, FaCog, FaSignOutAlt, FaCircle } from 'react-icons/fa';
-
-// const Layout = ({ children }) => {
-//   const { user, logout } = useAuth();
-//   const navigate = useNavigate();
-//   const location = useLocation();
-
-//   const handleLogout = () => {
-//     logout();
-//     navigate('/login');
-//   };
-
-//   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
-
-//   return (
-//     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-//       <nav className="navbar">
-//         <div className="navbar-inner">
-//           <Link to="/dashboard" className="brand">
-//             <div className="brand-icon">
-//               <FaStethoscope />
-//             </div>
-//             <div className="brand-text">
-//               <div className="brand-name">ConcoursPrep</div>
-//               <div className="brand-sub">Médecine Maroc</div>
-//             </div>
-//           </Link>
-
-//           <div className="nav-links">
-//             <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
-//               <FaThLarge style={{ display:'inline', marginRight:6, fontSize:11 }} />
-//               Tableau de bord
-//             </Link>
-//             <Link to="/exams" className={`nav-link ${isActive('/exams') ? 'active' : ''}`}>
-//               <FaBook style={{ display:'inline', marginRight:6, fontSize:11 }} />
-//               Épreuves
-//             </Link>
-//             <Link to="/submissions" className={`nav-link ${isActive('/submissions') ? 'active' : ''}`}>
-//               <FaClipboardList style={{ display:'inline', marginRight:6, fontSize:11 }} />
-//               Mes copies
-//             </Link>
-//             {user?.role === 'admin' && (
-//               <Link to="/admin/exams" className={`nav-link admin ${isActive('/admin') ? 'active' : ''}`}>
-//                 <FaCog style={{ display:'inline', marginRight:6, fontSize:11 }} />
-//                 Admin
-//               </Link>
-//             )}
-//           </div>
-
-//           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-//             <div className="nav-user">
-//               <div className="nav-user-dot" />
-//               <span style={{ fontSize:13, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-//                 {user?.name}
-//               </span>
-//             </div>
-//             <button
-//               onClick={handleLogout}
-//               className="btn btn-ghost btn-sm"
-//               title="Déconnexion"
-//               style={{ gap:6 }}
-//             >
-//               <FaSignOutAlt />
-//               <span style={{ display:'none' }}>Déco</span>
-//             </button>
-//           </div>
-//         </div>
-//       </nav>
-
-//       <main style={{ flex:1 }}>
-//         <div style={{ maxWidth:1280, margin:'0 auto', padding:'32px 24px 64px' }}>
-//           {children}
-//         </div>
-//       </main>
-
-//       <footer style={{ borderTop:'1px solid var(--border)', padding:'18px 24px', textAlign:'center' }}>
-//         <p style={{ fontSize:12, color:'var(--text3)' }}>
-//           © 2026 ConcoursPrep · Préparation aux concours de médecine au Maroc
-//         </p>
-//       </footer>
-//     </div>
-//   );
-// };
-
-// export default Layout;
-
-// components/Layout.js
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  FaStethoscope, FaThLarge, FaBook,
-  FaHistory, FaCog, FaSignOutAlt
-} from 'react-icons/fa';
+  LayoutDashboard,
+  BookOpen,
+  History,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Stethoscope,
+  UserRound
+} from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
 
-  const handleLogout = () => { logout(); navigate('/login'); };
-  const active = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const active = (path) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const links = [
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
+    { to: '/exams', icon: BookOpen, label: 'Epreuves' },
+    { to: '/history', icon: History, label: 'Historique' },
+  ];
+
+  if (user?.role === 'admin') {
+    links.push({ to: '/admin/exams', icon: Settings, label: 'Admin', admin: true });
+  }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
+    <div className="app-shell">
       <nav className="navbar">
         <div className="navbar-inner">
-          {/* Brand */}
           <Link to="/dashboard" className="brand">
-            <div className="brand-icon"><FaStethoscope /></div>
-            <div className="brand-text">
+            <div className="brand-icon">
+              <Stethoscope size={20} />
+            </div>
+            <div>
               <div className="brand-name">ConcoursPrep</div>
-              <div className="brand-sub">Médecine Maroc</div>
+              <div className="brand-sub">Medecine Maroc</div>
             </div>
           </Link>
 
-          {/* Nav links */}
-          <div className="nav-links">
-            <Link to="/dashboard" className={`nav-link ${active('/dashboard') ? 'active' : ''}`}>
-              <FaThLarge style={{ display:'inline', marginRight:6, fontSize:11 }} />
-              Tableau de bord
-            </Link>
-            <Link to="/exams" className={`nav-link ${active('/exams') ? 'active' : ''}`}>
-              <FaBook style={{ display:'inline', marginRight:6, fontSize:11 }} />
-              Épreuves
-            </Link>
-            <Link to="/history" className={`nav-link ${active('/history') ? 'active' : ''}`}>
-              <FaHistory style={{ display:'inline', marginRight:6, fontSize:11 }} />
-              Historique
-            </Link>
-            {user?.role === 'admin' && (
-              <Link to="/admin/exams" className={`nav-link admin ${active('/admin') ? 'active' : ''}`}>
-                <FaCog style={{ display:'inline', marginRight:6, fontSize:11 }} />
-                Admin
-              </Link>
-            )}
+          <div className={`nav-links ${open ? 'open' : ''}`}>
+            {links.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setOpen(false)}
+                  className={`nav-link ${active(link.to) ? 'active' : ''} ${link.admin ? 'admin' : ''}`}
+                >
+                  <Icon size={16} />
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
-          {/* User */}
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div className="nav-user-area">
             <div className="nav-user">
-              <div className="nav-user-dot" />
-              <span style={{ fontSize:13, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {user?.name}
-              </span>
+              <div className="nav-user-avatar">
+                {user?.name ? getInitials(user.name) : <UserRound size={15} />}
+              </div>
+              <span className="nav-user-name">{user?.name || 'Utilisateur'}</span>
+              <span className="nav-user-dot" />
             </div>
-            <button onClick={handleLogout} className="btn btn-ghost btn-sm" title="Déconnexion" style={{ gap:6 }}>
-              <FaSignOutAlt />
+
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost btn-sm"
+              title="Deconnexion"
+              type="button"
+            >
+              <LogOut size={15} />
+            </button>
+
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setOpen(!open)}
+              type="button"
+              aria-label="Menu"
+            >
+              {open ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
       </nav>
 
-      <main style={{ flex:1 }}>
-        <div style={{ maxWidth:1280, margin:'0 auto', padding:'32px 24px 64px' }}>
-          {children}
-        </div>
-      </main>
+      <main className="main-content">{children}</main>
 
-      <footer style={{ borderTop:'1px solid var(--border)', padding:'18px 24px', textAlign:'center' }}>
-        <p style={{ fontSize:12, color:'var(--text3)' }}>
-          © 2026 ConcoursPrep · Préparation aux concours de médecine au Maroc
-        </p>
+      <footer className="footer">
+        ConcoursPrep 2026 · Preparation aux concours de medecine au Maroc
       </footer>
     </div>
   );
